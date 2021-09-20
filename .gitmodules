@@ -1,0 +1,39 @@
+[submodule "Lab_2_Send_Telemetry_to_Azure_IoT/AzureSphereDevX"]
+	path = Lab_2_Send_Telemetry_to_Azure_IoT/AzureSphereDevX
+	url = https://github.com/Azure-Sphere-DevX/AzureSphereDevX.git
+[submodule "Lab_3_Device_Twins/AzureSphereDevX"]
+	path = Lab_3_Device_Twins/AzureSphereDevX
+	url = https://github.com/Azure-Sphere-DevX/AzureSphereDevX.git
+[submodule "Lab_4_Direct_Methods/AzureSphereDevX"]
+	path = Lab_4_Direct_Methods/AzureSphereDevX
+	url = https://github.com/Azure-Sphere-DevX/AzureSphereDevX.git
+[submodule "Lab_7_End_To_End/AzureSphereDevX"]
+	path = Lab_7_End_To_End/AzureSphereDevX
+	url = https://github.com/Azure-Sphere-DevX/AzureSphereDevX.git
+[submodule "Lab_2_Send_Telemetry_to_Azure_IoT/HardwareDefinitions"]
+	path = Lab_2_Send_Telemetry_to_Azure_IoT/HardwareDefinitions
+	url = https://github.com/Azure-Sphere-DevX/AzureSphereDevX.HardwareDefinitions.git
+[submodule "Lab_3_Device_Twins/HardwareDefinitions"]
+	path = Lab_3_Device_Twins/HardwareDefinitions
+	url = https://github.com/Azure-Sphere-DevX/AzureSphereDevX.HardwareDefinitions.git
+[submodule "Lab_4_Direct_Methods/HardwareDefinitions"]
+	path = Lab_4_Direct_Methods/HardwareDefinitions
+	url = https://github.com/Azure-Sphere-DevX/AzureSphereDevX.HardwareDefinitions.git
+[submodule "Lab_7_End_To_End/HardwareDefinitions"]
+	path = Lab_7_End_To_End/HardwareDefinitions
+	url = https://github.com/Azure-Sphere-DevX/AzureSphereDevX.HardwareDefinitions.git
+[submodule "Lab_2_Send_Telemetry_to_Azure_IoT/AzureSphereDrivers"]
+	path = Lab_2_Send_Telemetry_to_Azure_IoT/AzureSphereDrivers
+	url = https://github.com/Azure-Sphere-DevX/AzureSphereDrivers.git
+[submodule "Lab_3_Device_Twins/AzureSphereDrivers"]
+	path = Lab_3_Device_Twins/AzureSphereDrivers
+	url = https://github.com/Azure-Sphere-DevX/AzureSphereDrivers.git
+[submodule "Lab_4_Direct_Methods/AzureSphereDrivers"]
+	path = Lab_4_Direct_Methods/AzureSphereDrivers
+	url = https://github.com/Azure-Sphere-DevX/AzureSphereDrivers.git
+[submodule "Tools"]
+	path = Tools
+	url = https://github.com/Azure-Sphere-DevX/AzureSphereDevX.Tools.git
+[submodule "AzureSphereSamples"]
+	path = AzureSphereSamples
+	url = https://github.com/Azure/azure-sphere-samples.git

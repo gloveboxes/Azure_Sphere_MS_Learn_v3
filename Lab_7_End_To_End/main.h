@@ -15,7 +15,8 @@
 
 #include "hw/azure_sphere_learning_path.h" // Hardware definition
 #include "app_exit_codes.h"                // application specific exit codes
-#include "onboard_sensors.h"
+
+#include "../IntercoreContract/intercore_contract.h"
 
 #include <applibs/applications.h>
 #include <applibs/log.h>
@@ -27,13 +28,17 @@
 #define NETWORK_INTERFACE "wlan0"
 #define SAMPLE_VERSION_NUMBER "1.01"
 
+#define CORE_ENVIRONMENT_COMPONENT_ID "6583cf17-d321-4d72-8283-0b7c5b56442b"
+
 // Forward declarations
 static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg);
 static DX_DIRECT_METHOD_RESPONSE_CODE hvac_on_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg);
 static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding);
 static void dt_set_target_temperature_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding);
+static void intercore_environment_receive_msg_handler(void *data_block, ssize_t message_length);
 static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer);
 static void read_telemetry_handler(EventLoopTimer *eventLoopTimer);
+static void update_device_twins(EventLoopTimer *eventLoopTimer);
 
 // Number of bytes to allocate for the JSON telemetry message for IoT Hub/Central
 #define JSON_MESSAGE_BYTES 256
@@ -42,7 +47,23 @@ static char display_panel_message[64];
 DX_USER_CONFIG dx_config;
 static char* hvac_state[] = {"Unknown", "Heating", "Green", "Cooling", "On", "Off"};
 
-ENVIRONMENT onboard_telemetry;
+typedef struct {
+    int temperature;
+    int pressure;
+    int humidity;
+    HVAC_OPERATING_MODE operating_mode;	
+} SENSOR;
+
+typedef struct {
+    SENSOR latest;
+    SENSOR previous;
+    bool updated;
+    bool valid;
+    HVAC_OPERATING_MODE latest_operating_mode;
+    HVAC_OPERATING_MODE previous_operating_mode;
+} ENVIRONMENT;
+
+ENVIRONMENT telemetry;
 
 #define Log_Debug(f_, ...) dx_Log_Debug((f_), ##__VA_ARGS__)
 static char Log_Debug_Time_buffer[128];
@@ -74,16 +95,10 @@ static DX_DEVICE_TWIN_BINDING dt_utc_startup = {.propertyName = "StartupUtc", .t
 static DX_GPIO_BINDING gpio_operating_led = {.pin = LED2, .name = "gpio_operating_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
 static DX_GPIO_BINDING gpio_network_led = {.pin = NETWORK_CONNECTED_LED, .name = "network_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
 
-// Create an RGB LED gpio binding set
-static DX_GPIO_BINDING *gpio_ledRgb[] = {
-        &(DX_GPIO_BINDING){.pin = LED_RED, .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true, .name = "red led"},
-        &(DX_GPIO_BINDING){.pin = LED_GREEN, .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true, .name = "green led"},
-        &(DX_GPIO_BINDING){.pin = LED_BLUE, .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true, .name = "blue led"}
-};
-
 // declare timer bindings
 static DX_TIMER_BINDING tmr_read_telemetry = {.period = {4, 0}, .name = "tmr_read_telemetry", .handler = read_telemetry_handler};
 static DX_TIMER_BINDING tmr_publish_telemetry = {.period = {5, 0}, .name = "tmr_publish_telemetry", .handler = publish_telemetry_handler};
+static DX_TIMER_BINDING tmr_update_device_twins = {.period = {15, 0}, .name = "tmr_update_device_twins", .handler = update_device_twins};
 
 // Declare direct method bindings
 static DX_DIRECT_METHOD_BINDING dm_hvac_off = {.methodName = "HvacOff", .handler = hvac_off_handler};
@@ -97,6 +112,13 @@ DX_DEVICE_TWIN_BINDING *device_twin_bindings[] = {&dt_utc_startup,  &dt_hvac_sw_
 
 DX_DIRECT_METHOD_BINDING *direct_method_binding_sets[] = {&dm_hvac_on, &dm_hvac_off};
 DX_GPIO_BINDING *gpio_binding_sets[] = {&gpio_network_led, &gpio_operating_led};
-DX_TIMER_BINDING *timer_binding_sets[] = {&tmr_publish_telemetry, &tmr_read_telemetry};
+DX_TIMER_BINDING *timer_binding_sets[] = {&tmr_publish_telemetry, &tmr_read_telemetry, &tmr_update_device_twins};
 
-// clang-format on
+INTERCORE_BLOCK intercore_block;
+
+DX_INTERCORE_BINDING intercore_environment_ctx = {.sockFd = -1,
+                                                  .nonblocking_io = true,
+                                                  .rtAppComponentId = CORE_ENVIRONMENT_COMPONENT_ID,
+                                                  .interCoreCallback = intercore_environment_receive_msg_handler,
+                                                  .intercore_recv_block = &intercore_block,
+                                                  .intercore_recv_block_length = sizeof(intercore_block)};

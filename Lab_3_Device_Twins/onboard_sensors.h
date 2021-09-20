@@ -25,6 +25,7 @@ typedef struct {
     SENSOR latest;
     SENSOR previous;
     bool updated;
+    bool valid;
     HVAC_OPERATING_MODE latest_operating_mode;
     HVAC_OPERATING_MODE previous_operating_mode;
 } ENVIRONMENT;

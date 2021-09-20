@@ -35,7 +35,7 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer);
 #define JSON_MESSAGE_BYTES 256
 static char msgBuffer[JSON_MESSAGE_BYTES] = {0};
 DX_USER_CONFIG dx_config;
-ENVIRONMENT onboard_telemetry;
+ENVIRONMENT telemetry;
 
 #define Log_Debug(f_, ...) dx_Log_Debug((f_), ##__VA_ARGS__)
 static char Log_Debug_Time_buffer[128];

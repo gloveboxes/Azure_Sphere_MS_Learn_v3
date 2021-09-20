@@ -40,69 +40,44 @@
 /// </summary>
 /// <param name="temperature"></param>
 /// <param name="pressure"></param>
-static void update_device_twins(ENVIRONMENT *env)
+static void update_device_twins(EventLoopTimer *eventLoopTimer)
 {
-    static int64_t previous_milliseconds = 0ll;
-
-    int64_t now = dx_getNowMilliseconds();
-
-    // Update twins if 10 seconds (10000 milliseconds) or more have passed since the last update
-    if ((now - previous_milliseconds) > 10000) {
-        previous_milliseconds = now;
-
-        if (env->previous.temperature != env->latest.temperature) {
-            env->previous.temperature = env->latest.temperature;
-            // Update temperature device twin
-            dx_deviceTwinReportValue(&dt_env_temperature, &env->latest.temperature);
-        }
-
-        if (env->previous.pressure != env->latest.pressure) {
-            env->previous.pressure = env->latest.pressure;
-            // Update pressure device twin
-            dx_deviceTwinReportValue(&dt_env_pressure, &env->latest.pressure);
-        }
-
-        if (env->previous.humidity != env->latest.humidity) {
-            env->previous.humidity = env->latest.humidity;
-            // Update humidity device twin
-            dx_deviceTwinReportValue(&dt_env_humidity, &env->latest.humidity);
-        }
-
-        if (env->latest_operating_mode != HVAC_MODE_UNKNOWN && env->latest_operating_mode != env->previous_operating_mode) {
-            env->previous_operating_mode = env->latest_operating_mode;
-            dx_deviceTwinReportValue(&dt_hvac_operating_mode, hvac_state[env->latest_operating_mode]);
-        }
-    }
-}
-
-/// <summary>
-/// Set the temperature status led.
-/// Red to turn on heater to reach desired temperature.
-/// Blue to turn on cooler to reach desired temperature
-/// Green equals just right, no action required.
-/// </summary>
-void set_hvac_operating_mode(void)
-{
-    if (!dt_hvac_target_temperature.propertyUpdated || !onboard_telemetry.updated) {
+    if (ConsumeEventLoopTimerEvent(eventLoopTimer) != 0)
+    {
+        dx_terminate(DX_ExitCode_ConsumeEventLoopTimeEvent);
         return;
     }
 
-    int target_temperature = *(int *)dt_hvac_target_temperature.propertyValue;
-
-    onboard_telemetry.latest_operating_mode = onboard_telemetry.latest.temperature == target_temperature  ? HVAC_MODE_GREEN
-                                              : onboard_telemetry.latest.temperature > target_temperature ? HVAC_MODE_COOLING
-                                                                                                          : HVAC_MODE_HEATING;
-
-    if (onboard_telemetry.previous_operating_mode != onboard_telemetry.latest_operating_mode) {
-        // minus one as first item is HVAC_MODE_UNKNOWN
-        if (onboard_telemetry.previous_operating_mode != HVAC_MODE_UNKNOWN) {
-            dx_gpioOff(gpio_ledRgb[onboard_telemetry.previous_operating_mode - 1]);
+    if (telemetry.valid)
+    {
+        if (telemetry.previous.temperature != telemetry.latest.temperature)
+        {
+            telemetry.previous.temperature = telemetry.latest.temperature;
+            // Update temperature device twin
+            dx_deviceTwinReportValue(&dt_env_temperature, &telemetry.latest.temperature);
         }
-        onboard_telemetry.previous_operating_mode = onboard_telemetry.latest_operating_mode;
-    }
 
-    // minus one as first item is HVAC_MODE_UNKNOWN
-    dx_gpioOn(gpio_ledRgb[onboard_telemetry.latest_operating_mode - 1]);
+        if (telemetry.previous.pressure != telemetry.latest.pressure)
+        {
+            telemetry.previous.pressure = telemetry.latest.pressure;
+            // Update pressure device twin
+            dx_deviceTwinReportValue(&dt_env_pressure, &telemetry.latest.pressure);
+        }
+
+        if (telemetry.previous.humidity != telemetry.latest.humidity)
+        {
+            telemetry.previous.humidity = telemetry.latest.humidity;
+            // Update humidity device twin
+            dx_deviceTwinReportValue(&dt_env_humidity, &telemetry.latest.humidity);
+        }
+
+        if (telemetry.latest_operating_mode != HVAC_MODE_UNKNOWN && telemetry.latest_operating_mode != telemetry.previous_operating_mode)
+        {
+            telemetry.previous_operating_mode = telemetry.latest_operating_mode;
+            // Update operating mode device twin
+            dx_deviceTwinReportValue(&dt_hvac_operating_mode, hvac_state[telemetry.latest_operating_mode]);
+        }
+    }
 }
 
 /// <summary>
@@ -113,29 +88,30 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
 {
     static int msgId = 0;
 
-    if (ConsumeEventLoopTimerEvent(eventLoopTimer) != 0) {
+    if (ConsumeEventLoopTimerEvent(eventLoopTimer) != 0)
+    {
         dx_terminate(DX_ExitCode_ConsumeEventLoopTimeEvent);
         return;
     }
 
-    if (!dx_isAzureConnected() || !onboard_telemetry.updated) {
+    if (!dx_isAzureConnected() || !telemetry.updated)
+    {
         return;
     }
 
-    // clang-format off
-    // Validate sensor data to check within expected range
-    if (!IN_RANGE(onboard_telemetry.latest.temperature, -20, 50) && 
-        !IN_RANGE(onboard_telemetry.latest.pressure, 800, 1200) &&
-        !IN_RANGE(onboard_telemetry.latest.humidity, 0, 100)) 
+    if (!telemetry.valid)
     {
         Log_Debug("ERROR: Invalid data from sensor.\n");
-    } else {
+    }
+    else
+    {
+        // clang-format off
         // Serialize telemetry as JSON
         if (dx_jsonSerialize(msgBuffer, sizeof(msgBuffer), 6,                             
             DX_JSON_INT, "MsgId", msgId++, 
-            DX_JSON_INT, "Temperature", onboard_telemetry.latest.temperature, 
-            DX_JSON_INT, "Pressure", onboard_telemetry.latest.pressure,
-            DX_JSON_INT, "Humidity", onboard_telemetry.latest.humidity,
+            DX_JSON_INT, "Temperature", telemetry.latest.temperature, 
+            DX_JSON_INT, "Pressure", telemetry.latest.pressure,
+            DX_JSON_INT, "Humidity", telemetry.latest.humidity,
             DX_JSON_INT, "PeakUserMemoryKiB", (int)Applications_GetPeakUserModeMemoryUsageInKB(),
             DX_JSON_INT, "TotalMemoryKiB", (int)Applications_GetTotalMemoryUsageInKB()))
         // clang-format on
@@ -144,15 +120,21 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
 
             // Publish telemetry message to IoT Hub/Central
             dx_azurePublish(msgBuffer, strlen(msgBuffer), messageProperties, NELEMS(messageProperties), &contentProperties);
-
-            // Update the device twins
-            update_device_twins(&onboard_telemetry);
-        } else {
+        }
+        else
+        {
             Log_Debug("JSON Serialization failed: Buffer too small\n");
             dx_terminate(APP_ExitCode_Telemetry_Buffer_Too_Small);
         }
     }
 }
+
+/***********************************************************************************************************
+ * Integrate real-time core sensor
+ *
+ * Request latest environment readings from the real-time core app
+ * Process environment readings intercore message from the real-time core app
+ **********************************************************************************************************/
 
 /// <summary>
 /// read_telemetry_handler callback handler called every 4 seconds
@@ -161,15 +143,65 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
 /// <param name="eventLoopTimer"></param>
 static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
 {
-    if (ConsumeEventLoopTimerEvent(eventLoopTimer) != 0) {
+    if (ConsumeEventLoopTimerEvent(eventLoopTimer) != 0)
+    {
         dx_terminate(DX_ExitCode_ConsumeEventLoopTimeEvent);
         return;
     }
-    onboard_sensors_read(&onboard_telemetry.latest);
-    onboard_telemetry.updated = true;
+    // Set command for rea-time core application
+    intercore_block.cmd = IC_READ_SENSOR;
+    dx_intercorePublish(&intercore_environment_ctx, &intercore_block, sizeof(intercore_block));
+}
 
-    // Set the HVAC Operating mode color
-    set_hvac_operating_mode();
+/// <summary>
+/// Callback handler for Inter-Core Messaging
+/// </summary>
+static void intercore_environment_receive_msg_handler(void *data_block, ssize_t message_length)
+{
+    INTERCORE_BLOCK *ic_data = (INTERCORE_BLOCK *)data_block;
+
+    switch (ic_data->cmd)
+    {
+    case IC_READ_SENSOR:
+        telemetry.latest.temperature = ic_data->temperature;
+        telemetry.latest.pressure = ic_data->pressure;
+        telemetry.latest.humidity = ic_data->humidity;
+        telemetry.latest_operating_mode = ic_data->operating_mode;
+        telemetry.updated = true;
+        telemetry.valid = IN_RANGE(telemetry.latest.temperature, -20, 50) && IN_RANGE(telemetry.latest.pressure, 800, 1200) && IN_RANGE(telemetry.latest.humidity, 0, 100);
+        break;
+    default:
+        break;
+    }
+}
+
+/***********************************************************************************************************
+ * REMOTE OPERATIONS
+ *
+ * Set target HVAC temperature
+ * Set HVAC panel message
+ * Turn HVAC on and off
+ **********************************************************************************************************/
+
+/// <summary>
+/// dt_set_target_temperature_handler callback handler is called when TargetTemperature device twin message received
+/// HVAC operating mode LED updated and IoT Plug and Play device twin acknowledged
+/// </summary>
+/// <param name="deviceTwinBinding"></param>
+static void dt_set_target_temperature_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding)
+{
+    if (IN_RANGE(*(int *)deviceTwinBinding->propertyValue, 0, 50))
+    {
+        intercore_block.cmd = IC_TARGET_TEMPERATURE;
+        intercore_block.temperature = *(int *)deviceTwinBinding->propertyValue;
+        dx_intercorePublish(&intercore_environment_ctx, &intercore_block, sizeof(intercore_block));
+
+        dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_COMPLETED);
+    }
+    else
+    {
+        dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_ERROR);
+    }
 }
 
 // This device twin callback demonstrates how to manage device twins of type string.
@@ -181,30 +213,17 @@ static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBindi
     char *panel_message = (char *)deviceTwinBinding->propertyValue;
 
     // Is the message size less than the destination buffer size and printable characters
-    if (strlen(panel_message) < sizeof(display_panel_message) && dx_isStringPrintable(panel_message)) {
+    if (strlen(panel_message) < sizeof(display_panel_message) && dx_isStringPrintable(panel_message))
+    {
         strncpy(display_panel_message, panel_message, sizeof(display_panel_message));
         Log_Debug("Virtual HVAC Display Panel Message: %s\n", display_panel_message);
         // IoT Plug and Play acknowledge completed
         dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_COMPLETED);
-    } else {
+    }
+    else
+    {
         Log_Debug("Local copy failed. String too long or invalid data\n");
         // IoT Plug and Play acknowledge error
-        dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_ERROR);
-    }
-}
-
-/// <summary>
-/// dt_set_target_temperature_handler callback handler is called when TargetTemperature device twin message received
-/// HVAC operating mode LED updated and IoT Plug and Play device twin acknowledged
-/// </summary>
-/// <param name="deviceTwinBinding"></param>
-static void dt_set_target_temperature_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding)
-{
-    if (IN_RANGE(*(int *)deviceTwinBinding->propertyValue, 0, 50)) {
-        // Set the HVAC Operating mode color
-        set_hvac_operating_mode();
-        dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_COMPLETED);
-    } else {
         dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_ERROR);
     }
 }
@@ -216,12 +235,22 @@ static DX_DIRECT_METHOD_RESPONSE_CODE hvac_on_handler(JSON_Value *json, DX_DIREC
     return DX_METHOD_SUCCEEDED;
 }
 
-// Direct method name =HvacOff
+// Direct method name = HvacOff
 static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
 {
     dx_gpioOff(&gpio_operating_led);
     return DX_METHOD_SUCCEEDED;
 }
+
+/***********************************************************************************************************
+ * PRODUCTION
+ *
+ * Add startup reporting
+ * Add application level watchdox
+ * Add deferred update support
+ * Add application level watchdox
+ *
+ **********************************************************************************************************/
 
 /// <summary>
 /// ConnectionStatus callback handler is called the connection status changes
@@ -232,13 +261,13 @@ static void connection_status(bool connected)
 {
     static bool first_time_only = true;
 
-    if (first_time_only && connected) {
+    if (first_time_only && connected)
+    {
         first_time_only = false;
         snprintf(msgBuffer, sizeof(msgBuffer), "Sample version: %s, DevX version: %s", SAMPLE_VERSION_NUMBER, AZURE_SPHERE_DEVX_VERSION);
         dx_deviceTwinReportValue(&dt_hvac_sw_version, msgBuffer);                                  // DX_TYPE_STRING
         dx_deviceTwinReportValue(&dt_utc_startup, dx_getCurrentUtc(msgBuffer, sizeof(msgBuffer))); // DX_TYPE_STRING
     }
-
     dx_gpioStateSet(&gpio_network_led, connected);
 }
 
@@ -249,8 +278,9 @@ static void InitPeripheralsAndHandlers(void)
 {
     dx_Log_Debug_Init(Log_Debug_Time_buffer, sizeof(Log_Debug_Time_buffer));
     dx_azureConnect(&dx_config, NETWORK_INTERFACE, IOT_PLUG_AND_PLAY_MODEL_ID);
+    dx_intercoreConnect(&intercore_environment_ctx);
+
     dx_gpioSetOpen(gpio_binding_sets, NELEMS(gpio_binding_sets));
-    dx_gpioSetOpen(gpio_ledRgb, NELEMS(gpio_ledRgb));
     dx_timerSetStart(timer_binding_sets, NELEMS(timer_binding_sets));
     dx_deviceTwinSubscribe(device_twin_bindings, NELEMS(device_twin_bindings));
     dx_directMethodSubscribe(direct_method_binding_sets, NELEMS(direct_method_binding_sets));
@@ -258,7 +288,7 @@ static void InitPeripheralsAndHandlers(void)
     dx_azureRegisterConnectionChangedNotification(connection_status);
 
     // initialize previous environment sensor variables
-    onboard_telemetry.previous.temperature = onboard_telemetry.previous.pressure = onboard_telemetry.previous.humidity = INT32_MAX;
+    telemetry.previous.temperature = telemetry.previous.pressure = telemetry.previous.humidity = INT32_MAX;
 }
 
 /// <summary>
@@ -277,17 +307,20 @@ int main(int argc, char *argv[])
 {
     dx_registerTerminationHandler();
 
-    if (!dx_configParseCmdLineArguments(argc, argv, &dx_config)) {
+    if (!dx_configParseCmdLineArguments(argc, argv, &dx_config))
+    {
         return dx_getTerminationExitCode();
     }
 
     InitPeripheralsAndHandlers();
 
     // Main loop
-    while (!dx_isTerminationRequired()) {
+    while (!dx_isTerminationRequired())
+    {
         int result = EventLoop_Run(dx_timerGetEventLoop(), -1, true);
         // Continue if interrupted by signal, e.g. due to breakpoint being set.
-        if (result == -1 && errno != EINTR) {
+        if (result == -1 && errno != EINTR)
+        {
             dx_terminate(DX_ExitCode_Main_EventLoopFail);
         }
     }

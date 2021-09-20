@@ -41,29 +41,30 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
 {
     static int msgId = 0;
 
-    if (ConsumeEventLoopTimerEvent(eventLoopTimer) != 0) {
+    if (ConsumeEventLoopTimerEvent(eventLoopTimer) != 0)
+    {
         dx_terminate(DX_ExitCode_ConsumeEventLoopTimeEvent);
         return;
     }
 
-    if (!dx_isAzureConnected() || !onboard_telemetry.updated) {
+    if (!dx_isAzureConnected() || !telemetry.updated)
+    {
         return;
     }
 
-    // clang-format off
-    // Validate sensor data to check within expected range
-    if (!IN_RANGE(onboard_telemetry.latest.temperature, -20, 50) && 
-        !IN_RANGE(onboard_telemetry.latest.pressure, 800, 1200) &&
-        !IN_RANGE(onboard_telemetry.latest.humidity, 0, 100)) 
+    if (!telemetry.valid)
     {
         Log_Debug("ERROR: Invalid data from sensor.\n");
-    } else {
+    }
+    else
+    {
+        // clang-format off
         // Serialize telemetry as JSON
         if (dx_jsonSerialize(msgBuffer, sizeof(msgBuffer), 6,                             
             DX_JSON_INT, "MsgId", msgId++, 
-            DX_JSON_INT, "Temperature", onboard_telemetry.latest.temperature, 
-            DX_JSON_INT, "Pressure", onboard_telemetry.latest.pressure,
-            DX_JSON_INT, "Humidity", onboard_telemetry.latest.humidity,
+            DX_JSON_INT, "Temperature", telemetry.latest.temperature, 
+            DX_JSON_INT, "Pressure", telemetry.latest.pressure,
+            DX_JSON_INT, "Humidity", telemetry.latest.humidity,
             DX_JSON_INT, "PeakUserMemoryKiB", (int)Applications_GetPeakUserModeMemoryUsageInKB(),
             DX_JSON_INT, "TotalMemoryKiB", (int)Applications_GetTotalMemoryUsageInKB()))
         // clang-format on
@@ -72,7 +73,9 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
 
             // Publish telemetry message to IoT Hub/Central
             dx_azurePublish(msgBuffer, strlen(msgBuffer), messageProperties, NELEMS(messageProperties), &contentProperties);
-        } else {
+        }
+        else
+        {
             Log_Debug("JSON Serialization failed: Buffer too small\n");
             dx_terminate(APP_ExitCode_Telemetry_Buffer_Too_Small);
         }
@@ -86,12 +89,14 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
 /// <param name="eventLoopTimer"></param>
 static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
 {
-    if (ConsumeEventLoopTimerEvent(eventLoopTimer) != 0) {
+    if (ConsumeEventLoopTimerEvent(eventLoopTimer) != 0)
+    {
         dx_terminate(DX_ExitCode_ConsumeEventLoopTimeEvent);
         return;
     }
-    onboard_sensors_read(&onboard_telemetry.latest);
-    onboard_telemetry.updated = true;
+    onboard_sensors_read(&telemetry.latest);
+    telemetry.updated = true;
+    telemetry.valid = IN_RANGE(telemetry.latest.temperature, -20, 50) && IN_RANGE(telemetry.latest.pressure, 800, 1200) && IN_RANGE(telemetry.latest.humidity, 0, 100);
 }
 
 /// <summary>
@@ -119,17 +124,20 @@ int main(int argc, char *argv[])
 {
     dx_registerTerminationHandler();
 
-    if (!dx_configParseCmdLineArguments(argc, argv, &dx_config)) {
+    if (!dx_configParseCmdLineArguments(argc, argv, &dx_config))
+    {
         return dx_getTerminationExitCode();
     }
 
     InitPeripheralsAndHandlers();
 
     // Main loop
-    while (!dx_isTerminationRequired()) {
+    while (!dx_isTerminationRequired())
+    {
         int result = EventLoop_Run(dx_timerGetEventLoop(), -1, true);
         // Continue if interrupted by signal, e.g. due to breakpoint being set.
-        if (result == -1 && errno != EINTR) {
+        if (result == -1 && errno != EINTR)
+        {
             dx_terminate(DX_ExitCode_Main_EventLoopFail);
         }
     }

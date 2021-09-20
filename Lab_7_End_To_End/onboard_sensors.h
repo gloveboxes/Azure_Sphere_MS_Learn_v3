@@ -7,12 +7,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "hw/azure_sphere_learning_path.h"
-
-#ifdef OEM_AVNET
-#include "AzureSphereDrivers/AVNET/HL/imu_temp_pressure.h"
-#endif
-
 typedef struct {
     int temperature;
     int pressure;
@@ -28,7 +22,3 @@ typedef struct {
     HVAC_OPERATING_MODE latest_operating_mode;
     HVAC_OPERATING_MODE previous_operating_mode;
 } ENVIRONMENT;
-
-bool onboard_sensors_read(SENSOR *telemetry);
-bool onboard_sensors_init(void);
-bool onboard_sensors_close(void);

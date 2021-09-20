@@ -34,6 +34,7 @@ static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBindi
 static void dt_set_target_temperature_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding);
 static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer);
 static void read_telemetry_handler(EventLoopTimer *eventLoopTimer);
+static void update_device_twins(EventLoopTimer *eventLoopTimer);
 
 // Number of bytes to allocate for the JSON telemetry message for IoT Hub/Central
 #define JSON_MESSAGE_BYTES 256
@@ -42,7 +43,7 @@ static char display_panel_message[64];
 DX_USER_CONFIG dx_config;
 static char* hvac_state[] = {"Unknown", "Heating", "Green", "Cooling", "On", "Off"};
 
-ENVIRONMENT onboard_telemetry;
+ENVIRONMENT telemetry;
 
 #define Log_Debug(f_, ...) dx_Log_Debug((f_), ##__VA_ARGS__)
 static char Log_Debug_Time_buffer[128];
@@ -84,6 +85,7 @@ static DX_GPIO_BINDING *gpio_ledRgb[] = {
 // declare timer bindings
 static DX_TIMER_BINDING tmr_read_telemetry = {.period = {4, 0}, .name = "tmr_read_telemetry", .handler = read_telemetry_handler};
 static DX_TIMER_BINDING tmr_publish_telemetry = {.period = {5, 0}, .name = "tmr_publish_telemetry", .handler = publish_telemetry_handler};
+static DX_TIMER_BINDING tmr_update_device_twins = {.period = {15, 0}, .name = "tmr_update_device_twins", .handler = update_device_twins};
 
 // Declare direct method bindings
 static DX_DIRECT_METHOD_BINDING dm_hvac_off = {.methodName = "HvacOff", .handler = hvac_off_handler};
@@ -97,6 +99,6 @@ DX_DEVICE_TWIN_BINDING *device_twin_bindings[] = {&dt_utc_startup,  &dt_hvac_sw_
 
 DX_DIRECT_METHOD_BINDING *direct_method_binding_sets[] = {&dm_hvac_on, &dm_hvac_off};
 DX_GPIO_BINDING *gpio_binding_sets[] = {&gpio_network_led, &gpio_operating_led};
-DX_TIMER_BINDING *timer_binding_sets[] = {&tmr_publish_telemetry, &tmr_read_telemetry};
+DX_TIMER_BINDING *timer_binding_sets[] = {&tmr_publish_telemetry, &tmr_read_telemetry, &tmr_update_device_twins};
 
 // clang-format on

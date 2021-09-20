@@ -7,8 +7,8 @@ AccessModifierOffset: -4
 AllowShortFunctionsOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
-BreakBeforeBraces: WebKit 
-ColumnLimit: 170
+BreakBeforeBraces: Allman
+ColumnLimit: 180
 DerivePointerAlignment: false
 KeepEmptyLinesAtTheStartOfBlocks: true
 PointerAlignment: Right

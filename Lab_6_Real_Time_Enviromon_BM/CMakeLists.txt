@@ -6,27 +6,24 @@
 #  Copyright (c) Microsoft Corporation. All rights reserved.
 #  Licensed under the MIT License.
 
-###################################################################################################################
-
-# Select your developer board by removing the # tag from the beginning of the line
-
-# The default board selected is the AVNET Azure Sphere Starter Kit Revision 1.
-
-# If you are NOT using the AVNET Revision 1 board be sure to comment out the AVNET board
-
-set(AVNET TRUE "AVNET Azure Sphere Starter Kit Revision 1 ")    
-# set(AVNET_REV_2 TRUE "AVNET Azure Sphere Starter Kit Revision 2 ")             
-# set(SEEED_STUDIO_RDB TRUE "Seeed Studio Azure Sphere MT3620 Development Kit (aka Reference Design Board or rdb)")
-# set(SEEED_STUDIO_MINI TRUE "Seeed Studio Azure Sphere MT3620 Mini Dev Board")
-
-###################################################################################################################
-
 cmake_minimum_required(VERSION 3.10)
 
-# Configurations
-project(rt_enviromon_bm C)
+# Generate project id from the folder name
+get_filename_component(ProjectId ${CMAKE_CURRENT_LIST_DIR} NAME)
+string(REPLACE " " "_" ProjectId ${ProjectId})
+string(TOLOWER ${ProjectId} ProjectId)
 
-azsphere_configure_tools(TOOLS_REVISION "21.01")
+project(${ProjectId} C)
+
+if (EXISTS "${PARENT_DIR}/azsphere_board.txt")
+    include("${PARENT_DIR}/azsphere_board.txt")
+else()
+    include(cmake/azsphere_board.cmake)
+endif()
+
+# Azure Sphere TOOLS_REVISION and TARGET_API_SET set in cmake/azsphere_config.cmake
+include(cmake/azsphere_config.cmake)
+
 add_compile_definitions(OSAI_BARE_METAL)
 add_compile_definitions(OSAI_ENABLE_DMA)
 
@@ -71,22 +68,22 @@ target_link_libraries(${PROJECT_NAME} MT3620_M4_Driver)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_DEPENDS ${CMAKE_SOURCE_DIR}/linker.ld)
 
 if(AVNET)
-    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "../HardwareDefinitions/avnet_mt3620_sk" TARGET_DEFINITION "azure_sphere_learning_path.json")
+    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/avnet_mt3620_sk" TARGET_DEFINITION "azure_sphere_learning_path.json")
     add_definitions( -DOEM_AVNET=TRUE )
 endif(AVNET)
 
 if(AVNET_REV_2)
-    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "../HardwareDefinitions/avnet_mt3620_sk_rev2" TARGET_DEFINITION "azure_sphere_learning_path.json")
+    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/avnet_mt3620_sk_rev2" TARGET_DEFINITION "azure_sphere_learning_path.json")
     add_definitions( -DOEM_AVNET=TRUE )
 endif(AVNET_REV_2)
 
 if (SEEED_STUDIO_RDB)
-    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "../HardwareDefinitions/mt3620_rdb" TARGET_DEFINITION "azure_sphere_learning_path.json")
+    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/mt3620_rdb" TARGET_DEFINITION "azure_sphere_learning_path.json")
     add_definitions( -DOEM_SEEED_STUDIO=TRUE )
 endif()
 
 if (SEEED_STUDIO_MINI)
-    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "../HardwareDefinitions/seeed_mt3620_mdb" TARGET_DEFINITION "azure_sphere_learning_path.json")
+    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/seeed_mt3620_mdb" TARGET_DEFINITION "azure_sphere_learning_path.json")
     add_definitions( -DOEM_SEEED_STUDIO_MINI=TRUE )    
 endif(SEEED_STUDIO_MINI)
 

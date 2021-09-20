@@ -43,3 +43,6 @@
 [submodule "Lab_6_Real_Time_Enviromon_RTOS/mt3620_m4_software"]
 	path = Lab_6_Real_Time_Enviromon_RTOS/mt3620_m4_software
 	url = https://github.com/MediaTek-Labs/mt3620_m4_software.git
+[submodule "Lab_6_Real_Time_Enviromon_BM/HardwareDefinitions"]
+	path = Lab_6_Real_Time_Enviromon_BM/HardwareDefinitions
+	url = https://github.com/Azure-Sphere-DevX/AzureSphereDevX.HardwareDefinitions.git

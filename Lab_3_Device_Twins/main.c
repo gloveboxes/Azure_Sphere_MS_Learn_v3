@@ -5,7 +5,8 @@
  *   1. DevX is an Open Source community-maintained implementation of the Azure Sphere SDK samples.
  *   2. DevX is a modular library that simplifies common development scenarios.
  *        - You can focus on your solution, not the plumbing.
- *   3. DevX documentation is maintained at https://github.com/Azure-Sphere-DevX/AzureSphereDevX.Examples/wiki
+ *   3. DevX documentation is maintained at
+ *https://github.com/Azure-Sphere-DevX/AzureSphereDevX.Examples/wiki
  *	 4. The DevX library is not a substitute for understanding the Azure Sphere SDK Samples.
  *          - https://github.com/Azure/azure-sphere-samples
  *
@@ -175,8 +176,14 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
         return;
     }
     onboard_sensors_read(&telemetry.latest);
+
     telemetry.updated = true;
-    telemetry.valid = IN_RANGE(telemetry.latest.temperature, -20, 50) && IN_RANGE(telemetry.latest.pressure, 800, 1200) && IN_RANGE(telemetry.latest.humidity, 0, 100);
+
+    // clang-format off
+    telemetry.valid = IN_RANGE(telemetry.latest.temperature, -20, 50) && 
+                      IN_RANGE(telemetry.latest.pressure, 800, 1200) &&
+                      IN_RANGE(telemetry.latest.humidity, 0, 100);
+    // clang-format on
 
     // Set the HVAC Operating mode color
     set_hvac_operating_mode();
@@ -185,7 +192,8 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
 // This device twin callback demonstrates how to manage device twins of type string.
 // A reference to the string is passed that is available only for the lifetime of the callback.
 // You must copy to a global char array to preserve the string outside of the callback.
-// As strings are arbitrary length on a constrained device this gives you, the developer, control of memory allocation.
+// As strings are arbitrary length on a constrained device this gives you, the developer, control of
+// memory allocation.
 static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding)
 {
     char *panel_message = (char *)deviceTwinBinding->propertyValue;
@@ -207,8 +215,8 @@ static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBindi
 }
 
 /// <summary>
-/// dt_set_target_temperature_handler callback handler is called when TargetTemperature device twin message received
-/// HVAC operating mode LED updated and IoT Plug and Play device twin acknowledged
+/// dt_set_target_temperature_handler callback handler is called when TargetTemperature device twin
+/// message received HVAC operating mode LED updated and IoT Plug and Play device twin acknowledged
 /// </summary>
 /// <param name="deviceTwinBinding"></param>
 static void dt_set_target_temperature_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding)

@@ -5,7 +5,8 @@
  *   1. DevX is an Open Source community-maintained implementation of the Azure Sphere SDK samples.
  *   2. DevX is a modular library that simplifies common development scenarios.
  *        - You can focus on your solution, not the plumbing.
- *   3. DevX documentation is maintained at https://github.com/Azure-Sphere-DevX/AzureSphereDevX.Examples/wiki
+ *   3. DevX documentation is maintained at
+ *https://github.com/Azure-Sphere-DevX/AzureSphereDevX.Examples/wiki
  *	 4. The DevX library is not a substitute for understanding the Azure Sphere SDK Samples.
  *          - https://github.com/Azure/azure-sphere-samples
  *
@@ -72,7 +73,8 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
             Log_Debug("%s\n", msgBuffer);
 
             // Publish telemetry message to IoT Hub/Central
-            dx_azurePublish(msgBuffer, strlen(msgBuffer), messageProperties, NELEMS(messageProperties), &contentProperties);
+            dx_azurePublish(msgBuffer, strlen(msgBuffer), messageProperties,
+                            NELEMS(messageProperties), &contentProperties);
         }
         else
         {
@@ -95,8 +97,14 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
         return;
     }
     onboard_sensors_read(&telemetry.latest);
+
     telemetry.updated = true;
-    telemetry.valid = IN_RANGE(telemetry.latest.temperature, -20, 50) && IN_RANGE(telemetry.latest.pressure, 800, 1200) && IN_RANGE(telemetry.latest.humidity, 0, 100);
+
+    // clang-format off
+    telemetry.valid = IN_RANGE(telemetry.latest.temperature, -20, 50) && 
+                      IN_RANGE(telemetry.latest.pressure, 800, 1200) &&
+                      IN_RANGE(telemetry.latest.humidity, 0, 100);
+    // clang-format on
 }
 
 /// <summary>

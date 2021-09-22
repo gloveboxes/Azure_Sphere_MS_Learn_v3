@@ -6,15 +6,12 @@
   "CmdArgs": [ "--ScopeID", "REPLACE_WITH_YOUR_AZURE_DPS_OR_IOT_CENTRAL_ID_SCOPE" ],
   "Capabilities": {
     "Gpio": [ "$NETWORK_CONNECTED_LED", "$LED2" ],
-    "PowerControls": [ "ForceReboot" ],
-    "SystemEventNotifications": true,
-    "SoftwareUpdateDeferral": true,
+    "I2cMaster": [ "$I2cMaster2" ],
     "AllowedConnections": [
       "global.azure-devices-provisioning.net",
       "REPLACE_WITH_YOUR_AZURE_IOT_HUB_OR_IOT_CENTRAL_URLS"
     ],
-    "DeviceAuthentication": "REPLACE_WITH_YOUR_AZURE_SPHERE_TENANT_ID",
-    "AllowedApplicationConnections": [ "6583cf17-d321-4d72-8283-0b7c5b56442b" ]
+    "DeviceAuthentication": "REPLACE_WITH_YOUR_AZURE_SPHERE_TENANT_ID"
   },
   "ApplicationType": "Default"
 }

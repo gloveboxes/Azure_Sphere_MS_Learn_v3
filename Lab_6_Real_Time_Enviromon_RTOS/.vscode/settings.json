@@ -28,5 +28,8 @@
     "AzureSphere.partnerApplications": {
         "6583cf17-d321-4d72-8283-0b7c5b56442b": "c:\\Data\\azure_sphere_learning_path_v3\\Lab_04_Azure_RTOS_Enviromon\\app_manifest.json",
         "25025d2c-66da-4448-bae1-ac26fcdd3627": ""
+    },
+    "files.associations": {
+        "intercore_contract.h": "c"
     }
 }

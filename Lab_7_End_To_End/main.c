@@ -148,7 +148,7 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
         dx_terminate(DX_ExitCode_ConsumeEventLoopTimeEvent);
         return;
     }
-    // Set command for rea-time core application
+    // Set command for real-time core application
     intercore_block.cmd = IC_READ_SENSOR;
     dx_intercorePublish(&intercore_environment_ctx, &intercore_block, sizeof(intercore_block));
 }
@@ -167,8 +167,14 @@ static void intercore_environment_receive_msg_handler(void *data_block, ssize_t 
         telemetry.latest.pressure = ic_data->pressure;
         telemetry.latest.humidity = ic_data->humidity;
         telemetry.latest_operating_mode = ic_data->operating_mode;
+
         telemetry.updated = true;
-        telemetry.valid = IN_RANGE(telemetry.latest.temperature, -20, 50) && IN_RANGE(telemetry.latest.pressure, 800, 1200) && IN_RANGE(telemetry.latest.humidity, 0, 100);
+
+        // clang-format off
+        telemetry.valid = IN_RANGE(telemetry.latest.temperature, -20, 50) && 
+                          IN_RANGE(telemetry.latest.pressure, 800, 1200) &&
+                          IN_RANGE(telemetry.latest.humidity, 0, 100);
+        // clang-format on
         break;
     default:
         break;

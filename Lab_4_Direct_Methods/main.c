@@ -5,7 +5,8 @@
  *   1. DevX is an Open Source community-maintained implementation of the Azure Sphere SDK samples.
  *   2. DevX is a modular library that simplifies common development scenarios.
  *        - You can focus on your solution, not the plumbing.
- *   3. DevX documentation is maintained at https://github.com/Azure-Sphere-DevX/AzureSphereDevX.Examples/wiki
+ *   3. DevX documentation is maintained at
+ *https://github.com/Azure-Sphere-DevX/AzureSphereDevX.Examples/wiki
  *	 4. The DevX library is not a substitute for understanding the Azure Sphere SDK Samples.
  *          - https://github.com/Azure/azure-sphere-samples
  *
@@ -175,8 +176,14 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
         return;
     }
     onboard_sensors_read(&telemetry.latest);
+
     telemetry.updated = true;
-    telemetry.valid = IN_RANGE(telemetry.latest.temperature, -20, 50) && IN_RANGE(telemetry.latest.pressure, 800, 1200) && IN_RANGE(telemetry.latest.humidity, 0, 100);
+
+    // clang-format off
+    telemetry.valid = IN_RANGE(telemetry.latest.temperature, -20, 50) && 
+                      IN_RANGE(telemetry.latest.pressure, 800, 1200) &&
+                      IN_RANGE(telemetry.latest.humidity, 0, 100);
+    // clang-format on
 
     // Set the HVAC Operating mode color
     set_hvac_operating_mode();
@@ -185,7 +192,8 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
 // This device twin callback demonstrates how to manage device twins of type string.
 // A reference to the string is passed that is available only for the lifetime of the callback.
 // You must copy to a global char array to preserve the string outside of the callback.
-// As strings are arbitrary length on a constrained device this gives you, the developer, control of memory allocation.
+// As strings are arbitrary length on a constrained device this gives you, the developer, control of
+// memory allocation.
 static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding)
 {
     char *panel_message = (char *)deviceTwinBinding->propertyValue;
@@ -207,8 +215,8 @@ static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBindi
 }
 
 /// <summary>
-/// dt_set_target_temperature_handler callback handler is called when TargetTemperature device twin message received
-/// HVAC operating mode LED updated and IoT Plug and Play device twin acknowledged
+/// dt_set_target_temperature_handler callback handler is called when TargetTemperature device twin
+/// message received HVAC operating mode LED updated and IoT Plug and Play device twin acknowledged
 /// </summary>
 /// <param name="deviceTwinBinding"></param>
 static void dt_set_target_temperature_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding)
@@ -222,6 +230,60 @@ static void dt_set_target_temperature_handler(DX_DEVICE_TWIN_BINDING *deviceTwin
     else
     {
         dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_ERROR);
+    }
+}
+
+/// <summary>
+/// Restart the Device
+/// </summary>
+static void DelayRestartDeviceTimerHandler(EventLoopTimer *eventLoopTimer)
+{
+    if (ConsumeEventLoopTimerEvent(eventLoopTimer) != 0)
+    {
+        dx_terminate(DX_ExitCode_ConsumeEventLoopTimeEvent);
+        return;
+    }
+    PowerManagement_ForceSystemReboot();
+}
+
+/// <summary>
+/// Start Device Power Restart Direct Method 'ResetMethod' integer seconds eg 5
+/// </summary>
+static DX_DIRECT_METHOD_RESPONSE_CODE RestartDeviceHandler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
+{
+    // Allocate and initialize a response message buffer. The
+    // calling function is responsible for the freeing memory
+    const size_t responseLen = 100;
+    static struct timespec period;
+
+    *responseMsg = (char *)malloc(responseLen);
+    memset(*responseMsg, 0, responseLen);
+
+    if (json_value_get_type(json) != JSONNumber)
+    {
+        return DX_METHOD_FAILED;
+    }
+
+    int seconds = (int)json_value_get_number(json);
+
+    // leave enough time for the device twin dt_reportedRestartUtc
+    // to update before restarting the device
+    if (seconds > 2 && seconds < 10)
+    {
+        // Create Direct Method Response
+        snprintf(*responseMsg, responseLen, "%s called. Restart in %d seconds", directMethodBinding->methodName, seconds);
+
+        // Set One Shot DX_TIMER_BINDING
+        period = (struct timespec){.tv_sec = seconds, .tv_nsec = 0};
+        dx_timerOneShotSet(&restart_device_oneshot_timer, &period);
+
+        return DX_METHOD_SUCCEEDED;
+    }
+    else
+    {
+        snprintf(*responseMsg, responseLen, "%s called. Restart Failed. Seconds out of range: %d", directMethodBinding->methodName, seconds);
+
+        return DX_METHOD_FAILED;
     }
 }
 
@@ -260,17 +322,17 @@ static void connection_status(bool connected)
 }
 
 /// <summary>
-///  Initialize peripherals, device twins, direct methods, timer_binding_sets.
+///  Initialize peripherals, device twins, direct methods, timer_bindings.
 /// </summary>
 static void InitPeripheralsAndHandlers(void)
 {
     dx_Log_Debug_Init(Log_Debug_Time_buffer, sizeof(Log_Debug_Time_buffer));
     dx_azureConnect(&dx_config, NETWORK_INTERFACE, IOT_PLUG_AND_PLAY_MODEL_ID);
-    dx_gpioSetOpen(gpio_binding_sets, NELEMS(gpio_binding_sets));
+    dx_gpioSetOpen(gpio_bindings, NELEMS(gpio_bindings));
     dx_gpioSetOpen(gpio_ledRgb, NELEMS(gpio_ledRgb));
-    dx_timerSetStart(timer_binding_sets, NELEMS(timer_binding_sets));
+    dx_timerSetStart(timer_bindings, NELEMS(timer_bindings));
     dx_deviceTwinSubscribe(device_twin_bindings, NELEMS(device_twin_bindings));
-    dx_directMethodSubscribe(direct_method_binding_sets, NELEMS(direct_method_binding_sets));
+    dx_directMethodSubscribe(direct_method_bindings, NELEMS(direct_method_bindings));
 
     dx_azureRegisterConnectionChangedNotification(connection_status);
 
@@ -283,10 +345,10 @@ static void InitPeripheralsAndHandlers(void)
 /// </summary>
 static void ClosePeripheralsAndHandlers(void)
 {
-    dx_timerSetStop(timer_binding_sets, NELEMS(timer_binding_sets));
+    dx_timerSetStop(timer_bindings, NELEMS(timer_bindings));
     dx_deviceTwinUnsubscribe();
     dx_directMethodUnsubscribe();
-    dx_gpioSetClose(gpio_binding_sets, NELEMS(gpio_binding_sets));
+    dx_gpioSetClose(gpio_bindings, NELEMS(gpio_bindings));
     dx_timerEventLoopStop();
 }
 

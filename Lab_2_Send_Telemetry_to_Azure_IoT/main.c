@@ -60,21 +60,20 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
     else
     {
         // clang-format off
-        // Serialize telemetry as JSON
-        if (dx_jsonSerialize(msgBuffer, sizeof(msgBuffer), 6,                             
-            DX_JSON_INT, "MsgId", msgId++, 
-            DX_JSON_INT, "Temperature", telemetry.latest.temperature, 
-            DX_JSON_INT, "Pressure", telemetry.latest.pressure,
-            DX_JSON_INT, "Humidity", telemetry.latest.humidity,
-            DX_JSON_INT, "PeakUserMemoryKiB", (int)Applications_GetPeakUserModeMemoryUsageInKB(),
-            DX_JSON_INT, "TotalMemoryKiB", (int)Applications_GetTotalMemoryUsageInKB()))
+		// Serialize telemetry as JSON
+		if (dx_jsonSerialize(msgBuffer, sizeof(msgBuffer), 6,
+			DX_JSON_INT, "MsgId", msgId++,
+			DX_JSON_INT, "Temperature", telemetry.latest.temperature,
+			DX_JSON_INT, "Pressure", telemetry.latest.pressure,
+			DX_JSON_INT, "Humidity", telemetry.latest.humidity,
+			DX_JSON_INT, "PeakUserMemoryKiB", (int)Applications_GetPeakUserModeMemoryUsageInKB(),
+			DX_JSON_INT, "TotalMemoryKiB", (int)Applications_GetTotalMemoryUsageInKB()))
         // clang-format on
         {
             Log_Debug("%s\n", msgBuffer);
 
             // Publish telemetry message to IoT Hub/Central
-            dx_azurePublish(msgBuffer, strlen(msgBuffer), messageProperties,
-                            NELEMS(messageProperties), &contentProperties);
+            dx_azurePublish(msgBuffer, strlen(msgBuffer), messageProperties, NELEMS(messageProperties), &contentProperties);
         }
         else
         {
@@ -101,9 +100,9 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
     telemetry.updated = true;
 
     // clang-format off
-    telemetry.valid = IN_RANGE(telemetry.latest.temperature, -20, 50) && 
-                      IN_RANGE(telemetry.latest.pressure, 800, 1200) &&
-                      IN_RANGE(telemetry.latest.humidity, 0, 100);
+	telemetry.valid = IN_RANGE(telemetry.latest.temperature, -20, 50) &&
+		IN_RANGE(telemetry.latest.pressure, 800, 1200) &&
+		IN_RANGE(telemetry.latest.humidity, 0, 100);
     // clang-format on
 }
 

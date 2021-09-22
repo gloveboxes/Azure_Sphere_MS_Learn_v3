@@ -21,7 +21,6 @@
 #include <applibs/log.h>
 #include <applibs/powermanagement.h>
 
-// clang-format off
 // https://docs.microsoft.com/en-us/azure/iot-pnp/overview-iot-plug-and-play
 #define IOT_PLUG_AND_PLAY_MODEL_ID "dtmi:com:example:azuresphere:labmonitor;1"
 #define NETWORK_INTERFACE "wlan0"
@@ -54,19 +53,17 @@ static DX_MESSAGE_PROPERTY *messageProperties[] = {&(DX_MESSAGE_PROPERTY){.key =
 static DX_MESSAGE_CONTENT_PROPERTIES contentProperties = {.contentEncoding = "utf-8", .contentType = "application/json"};
 
 // declare gpio bindings
-static DX_GPIO_BINDING gpio_operating_led = {.pin = LED2, .name = "gpio_operating_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
-static DX_GPIO_BINDING gpio_network_led = {.pin = NETWORK_CONNECTED_LED, .name = "network_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
+static DX_GPIO_BINDING gpio_operating_led = {
+    .pin = LED2, .name = "gpio_operating_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
+static DX_GPIO_BINDING gpio_network_led = {
+    .pin = NETWORK_CONNECTED_LED, .name = "network_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
 
 // declare timer bindings
 static DX_TIMER_BINDING tmr_read_telemetry = {.period = {4, 0}, .name = "tmr_read_telemetry", .handler = read_telemetry_handler};
 static DX_TIMER_BINDING tmr_publish_telemetry = {.period = {5, 0}, .name = "tmr_publish_telemetry", .handler = publish_telemetry_handler};
-
-// clang-format on
 
 // All bindings referenced in the following binding sets are initialised in the InitPeripheralsAndHandlers function
 DX_DEVICE_TWIN_BINDING *device_twin_bindings[] = {};
 DX_DIRECT_METHOD_BINDING *direct_method_binding_sets[] = {};
 DX_GPIO_BINDING *gpio_binding_sets[] = {&gpio_network_led, &gpio_operating_led};
 DX_TIMER_BINDING *timer_binding_sets[] = {&tmr_publish_telemetry, &tmr_read_telemetry};
-
-// clang-format on

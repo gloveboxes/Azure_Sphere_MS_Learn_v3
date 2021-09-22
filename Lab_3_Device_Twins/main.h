@@ -51,82 +51,49 @@ static char Log_Debug_Time_buffer[128];
 /// Hub routing
 /// https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-messages-d2c
 /// </summary>
-static DX_MESSAGE_PROPERTY *messageProperties[] = {
-    &(DX_MESSAGE_PROPERTY){.key = "appid", .value = "hvac"},
-    &(DX_MESSAGE_PROPERTY){.key = "type", .value = "telemetry"},
-    &(DX_MESSAGE_PROPERTY){.key = "schema", .value = "1"}};
+static DX_MESSAGE_PROPERTY *messageProperties[] = {&(DX_MESSAGE_PROPERTY){.key = "appid", .value = "hvac"},
+                                                   &(DX_MESSAGE_PROPERTY){.key = "type", .value = "telemetry"},
+                                                   &(DX_MESSAGE_PROPERTY){.key = "schema", .value = "1"}};
 
 /// <summary>
 /// Common content properties for publish messages to IoT Hub/Central
 /// </summary>
-static DX_MESSAGE_CONTENT_PROPERTIES contentProperties = {.contentEncoding = "utf-8",
-                                                          .contentType = "application/json"};
+static DX_MESSAGE_CONTENT_PROPERTIES contentProperties = {.contentEncoding = "utf-8", .contentType = "application/json"};
 
 // declare device twin bindings
-static DX_DEVICE_TWIN_BINDING dt_env_humidity = {.propertyName = "Humidity",
-                                                 .twinType = DX_DEVICE_TWIN_INT};
-static DX_DEVICE_TWIN_BINDING dt_env_pressure = {.propertyName = "Pressure",
-                                                 .twinType = DX_DEVICE_TWIN_INT};
-static DX_DEVICE_TWIN_BINDING dt_env_temperature = {.propertyName = "Temperature",
-                                                    .twinType = DX_DEVICE_TWIN_INT};
-static DX_DEVICE_TWIN_BINDING dt_hvac_operating_mode = {.propertyName = "OperatingMode",
-                                                        .twinType = DX_DEVICE_TWIN_STRING};
-static DX_DEVICE_TWIN_BINDING dt_hvac_panel_message = {.propertyName = "PanelMessage",
-                                                       .twinType = DX_DEVICE_TWIN_STRING,
-                                                       .handler = dt_set_panel_message_handler};
-static DX_DEVICE_TWIN_BINDING dt_hvac_sw_version = {.propertyName = "SoftwareVersion",
-                                                    .twinType = DX_DEVICE_TWIN_STRING};
+static DX_DEVICE_TWIN_BINDING dt_env_humidity = {.propertyName = "Humidity", .twinType = DX_DEVICE_TWIN_INT};
+static DX_DEVICE_TWIN_BINDING dt_env_pressure = {.propertyName = "Pressure", .twinType = DX_DEVICE_TWIN_INT};
+static DX_DEVICE_TWIN_BINDING dt_env_temperature = {.propertyName = "Temperature", .twinType = DX_DEVICE_TWIN_INT};
+static DX_DEVICE_TWIN_BINDING dt_hvac_operating_mode = {.propertyName = "OperatingMode", .twinType = DX_DEVICE_TWIN_STRING};
+static DX_DEVICE_TWIN_BINDING dt_hvac_panel_message = {
+    .propertyName = "PanelMessage", .twinType = DX_DEVICE_TWIN_STRING, .handler = dt_set_panel_message_handler};
+static DX_DEVICE_TWIN_BINDING dt_hvac_sw_version = {.propertyName = "SoftwareVersion", .twinType = DX_DEVICE_TWIN_STRING};
 static DX_DEVICE_TWIN_BINDING dt_hvac_target_temperature = {
-    .propertyName = "TargetTemperature",
-    .twinType = DX_DEVICE_TWIN_INT,
-    .handler = dt_set_target_temperature_handler};
-static DX_DEVICE_TWIN_BINDING dt_utc_startup = {.propertyName = "StartupUtc",
-                                                .twinType = DX_DEVICE_TWIN_STRING};
+    .propertyName = "TargetTemperature", .twinType = DX_DEVICE_TWIN_INT, .handler = dt_set_target_temperature_handler};
+static DX_DEVICE_TWIN_BINDING dt_utc_startup = {.propertyName = "StartupUtc", .twinType = DX_DEVICE_TWIN_STRING};
 
 // declare gpio bindings
-static DX_GPIO_BINDING gpio_operating_led = {.pin = LED2,
-                                             .name = "gpio_operating_led",
-                                             .direction = DX_OUTPUT,
-                                             .initialState = GPIO_Value_Low,
-                                             .invertPin = true};
-static DX_GPIO_BINDING gpio_network_led = {.pin = NETWORK_CONNECTED_LED,
-                                           .name = "network_led",
-                                           .direction = DX_OUTPUT,
-                                           .initialState = GPIO_Value_Low,
-                                           .invertPin = true};
+static DX_GPIO_BINDING gpio_operating_led = {
+    .pin = LED2, .name = "gpio_operating_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
+static DX_GPIO_BINDING gpio_network_led = {
+    .pin = NETWORK_CONNECTED_LED, .name = "network_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
 
 // Create an RGB LED gpio binding set
-static DX_GPIO_BINDING *gpio_ledRgb[] = {&(DX_GPIO_BINDING){.pin = LED_RED,
-                                                            .direction = DX_OUTPUT,
-                                                            .initialState = GPIO_Value_Low,
-                                                            .invertPin = true,
-                                                            .name = "red led"},
-                                         &(DX_GPIO_BINDING){.pin = LED_GREEN,
-                                                            .direction = DX_OUTPUT,
-                                                            .initialState = GPIO_Value_Low,
-                                                            .invertPin = true,
-                                                            .name = "green led"},
-                                         &(DX_GPIO_BINDING){.pin = LED_BLUE,
-                                                            .direction = DX_OUTPUT,
-                                                            .initialState = GPIO_Value_Low,
-                                                            .invertPin = true,
-                                                            .name = "blue led"}};
+static DX_GPIO_BINDING *gpio_ledRgb[] = {
+    &(DX_GPIO_BINDING){.pin = LED_RED, .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true, .name = "red led"},
+    &(DX_GPIO_BINDING){.pin = LED_GREEN, .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true, .name = "green led"},
+    &(DX_GPIO_BINDING){.pin = LED_BLUE, .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true, .name = "blue led"}};
 
 // declare timer bindings
-static DX_TIMER_BINDING tmr_read_telemetry = {
-    .period = {4, 0}, .name = "tmr_read_telemetry", .handler = read_telemetry_handler};
-static DX_TIMER_BINDING tmr_publish_telemetry = {
-    .period = {5, 0}, .name = "tmr_publish_telemetry", .handler = publish_telemetry_handler};
-static DX_TIMER_BINDING tmr_update_device_twins = {
-    .period = {15, 0}, .name = "tmr_update_device_twins", .handler = update_device_twins};
+static DX_TIMER_BINDING tmr_read_telemetry = {.period = {4, 0}, .name = "tmr_read_telemetry", .handler = read_telemetry_handler};
+static DX_TIMER_BINDING tmr_publish_telemetry = {.period = {5, 0}, .name = "tmr_publish_telemetry", .handler = publish_telemetry_handler};
+static DX_TIMER_BINDING tmr_update_device_twins = {.period = {15, 0}, .name = "tmr_update_device_twins", .handler = update_device_twins};
 
 // All bindings referenced in the following binding sets are initialised in the
 // InitPeripheralsAndHandlers function
-DX_DEVICE_TWIN_BINDING *device_twin_bindings[] = {
-    &dt_utc_startup,  &dt_hvac_sw_version,    &dt_env_temperature,     &dt_env_pressure,
-    &dt_env_humidity, &dt_hvac_panel_message, &dt_hvac_operating_mode, &dt_hvac_target_temperature};
+DX_DEVICE_TWIN_BINDING *device_twin_bindings[] = {&dt_utc_startup,  &dt_hvac_sw_version,    &dt_env_temperature,     &dt_env_pressure,
+                                                  &dt_env_humidity, &dt_hvac_panel_message, &dt_hvac_operating_mode, &dt_hvac_target_temperature};
 
 DX_DIRECT_METHOD_BINDING *direct_method_binding_sets[] = {};
 DX_GPIO_BINDING *gpio_binding_sets[] = {&gpio_network_led, &gpio_operating_led};
-DX_TIMER_BINDING *timer_binding_sets[] = {&tmr_publish_telemetry, &tmr_read_telemetry,
-                                          &tmr_update_device_twins};
+DX_TIMER_BINDING *timer_binding_sets[] = {&tmr_publish_telemetry, &tmr_read_telemetry, &tmr_update_device_twins};

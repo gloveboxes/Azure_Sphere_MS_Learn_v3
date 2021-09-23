@@ -7,7 +7,12 @@ project (demo_threadx C ASM)
 
 SET(CMAKE_ASM_FLAGS "-mcpu=cortex-m4")
 
-include(cmake/azsphere_board.cmake)
+if (EXISTS "${PARENT_DIR}/azsphere_board.txt")
+    include("${PARENT_DIR}/azsphere_board.txt")
+else()
+    include(cmake/azsphere_board.cmake)
+endif()
+
 include(cmake/azsphere_config.cmake)
 
 add_compile_definitions(OSAI_AZURE_RTOS)

@@ -182,11 +182,10 @@ static void intercore_environment_receive_msg_handler(void *data_block, ssize_t 
 }
 
 /***********************************************************************************************************
- * REMOTE OPERATIONS
+ * REMOTE OPERATIONS: DEVICE TWINS
  *
  * Set target HVAC temperature
  * Set HVAC panel message
- * Turn HVAC on and off
  **********************************************************************************************************/
 
 /// <summary>
@@ -234,6 +233,68 @@ static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBindi
     }
 }
 
+/***********************************************************************************************************
+ * REMOTE OPERATIONS: DIRECT METHODS
+ *
+ * Restart HVAC
+ * Set HVAC panel message
+ * Turn HVAC on and off
+ **********************************************************************************************************/
+
+/// <summary>
+/// Restart the Device
+/// </summary>
+static void hvac_delay_restart_handler(EventLoopTimer *eventLoopTimer)
+{
+    if (ConsumeEventLoopTimerEvent(eventLoopTimer) != 0)
+    {
+        dx_terminate(DX_ExitCode_ConsumeEventLoopTimeEvent);
+        return;
+    }
+    PowerManagement_ForceSystemReboot();
+}
+
+/// <summary>
+/// Start Device Power Restart Direct Method 'ResetMethod' integer seconds eg 5
+/// </summary>
+static DX_DIRECT_METHOD_RESPONSE_CODE hvac_restart_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
+{
+    // Allocate and initialize a response message buffer. The
+    // calling function is responsible for the freeing memory
+    const size_t responseLen = 100;
+    static struct timespec period;
+
+    *responseMsg = (char *)malloc(responseLen);
+    memset(*responseMsg, 0, responseLen);
+
+    if (json_value_get_type(json) != JSONNumber)
+    {
+        return DX_METHOD_FAILED;
+    }
+
+    int seconds = (int)json_value_get_number(json);
+
+    // leave enough time for the device twin dt_reportedRestartUtc
+    // to update before restarting the device
+    if (seconds > 2 && seconds < 10)
+    {
+        // Create Direct Method Response
+        snprintf(*responseMsg, responseLen, "%s called. Restart in %d seconds", directMethodBinding->methodName, seconds);
+
+        // Set One Shot DX_TIMER_BINDING
+        period = (struct timespec){.tv_sec = seconds, .tv_nsec = 0};
+        dx_timerOneShotSet(&tmr_hvac_restart_oneshot_timer, &period);
+
+        return DX_METHOD_SUCCEEDED;
+    }
+    else
+    {
+        snprintf(*responseMsg, responseLen, "%s called. Restart Failed. Seconds out of range: %d", directMethodBinding->methodName, seconds);
+
+        return DX_METHOD_FAILED;
+    }
+}
+
 // Direct method name = HvacOn
 static DX_DIRECT_METHOD_RESPONSE_CODE hvac_on_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
 {
@@ -241,7 +302,7 @@ static DX_DIRECT_METHOD_RESPONSE_CODE hvac_on_handler(JSON_Value *json, DX_DIREC
     return DX_METHOD_SUCCEEDED;
 }
 
-// Direct method name = HvacOff
+// Direct method name =HvacOff
 static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
 {
     dx_gpioOff(&gpio_operating_led);
@@ -288,7 +349,6 @@ static void InitPeripheralsAndHandlers(void)
 
     dx_gpioSetOpen(gpio_binding_sets, NELEMS(gpio_binding_sets));
     dx_timerSetStart(timer_binding_sets, NELEMS(timer_binding_sets));
-    dx_deviceTwinSubscribe(device_twin_bindings, NELEMS(device_twin_bindings));
     dx_directMethodSubscribe(direct_method_binding_sets, NELEMS(direct_method_binding_sets));
 
     dx_azureRegisterConnectionChangedNotification(connection_status);
@@ -303,7 +363,6 @@ static void InitPeripheralsAndHandlers(void)
 static void ClosePeripheralsAndHandlers(void)
 {
     dx_timerSetStop(timer_binding_sets, NELEMS(timer_binding_sets));
-    dx_deviceTwinUnsubscribe();
     dx_directMethodUnsubscribe();
     dx_gpioSetClose(gpio_binding_sets, NELEMS(gpio_binding_sets));
     dx_timerEventLoopStop();

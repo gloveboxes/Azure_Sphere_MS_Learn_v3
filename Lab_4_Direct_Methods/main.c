@@ -107,7 +107,7 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
 }
 
 /***********************************************************************************************************
- * REMOTE OPERATIONS
+ * REMOTE OPERATIONS: DIRECT METHODS
  *
  * Restart HVAC
  * Set HVAC panel message

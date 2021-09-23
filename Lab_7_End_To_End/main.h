@@ -32,8 +32,10 @@
 // Forward declarations
 static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg);
 static DX_DIRECT_METHOD_RESPONSE_CODE hvac_on_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg);
+static DX_DIRECT_METHOD_RESPONSE_CODE hvac_restart_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg);
 static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding);
 static void dt_set_target_temperature_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding);
+static void hvac_delay_restart_handler(EventLoopTimer *eventLoopTimer);
 static void intercore_environment_receive_msg_handler(void *data_block, ssize_t message_length);
 static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer);
 static void read_telemetry_handler(EventLoopTimer *eventLoopTimer);
@@ -104,18 +106,20 @@ static DX_GPIO_BINDING gpio_network_led = {
 static DX_TIMER_BINDING tmr_read_telemetry = {.period = {4, 0}, .name = "tmr_read_telemetry", .handler = read_telemetry_handler};
 static DX_TIMER_BINDING tmr_publish_telemetry = {.period = {5, 0}, .name = "tmr_publish_telemetry", .handler = publish_telemetry_handler};
 static DX_TIMER_BINDING tmr_update_device_twins = {.period = {15, 0}, .name = "tmr_update_device_twins", .handler = update_device_twins};
+static DX_TIMER_BINDING tmr_hvac_restart_oneshot_timer = {.name = "tmr_hvac_restart_oneshot_timer", .handler = hvac_delay_restart_handler};
 
 // Declare direct method bindings
 static DX_DIRECT_METHOD_BINDING dm_hvac_off = {.methodName = "HvacOff", .handler = hvac_off_handler};
 static DX_DIRECT_METHOD_BINDING dm_hvac_on = {.methodName = "HvacOn", .handler = hvac_on_handler};
+static DX_DIRECT_METHOD_BINDING dm_hvac_restart = {.methodName = "HvacRestart", .handler = hvac_restart_handler};
 
 // All bindings referenced in the following binding sets are initialised in the InitPeripheralsAndHandlers function
 DX_DEVICE_TWIN_BINDING *device_twin_bindings[] = {&dt_utc_startup,  &dt_hvac_sw_version,    &dt_env_temperature,     &dt_env_pressure,
                                                   &dt_env_humidity, &dt_hvac_panel_message, &dt_hvac_operating_mode, &dt_hvac_target_temperature};
 
-DX_DIRECT_METHOD_BINDING *direct_method_binding_sets[] = {&dm_hvac_on, &dm_hvac_off};
+DX_DIRECT_METHOD_BINDING *direct_method_binding_sets[] = {&dm_hvac_restart, &dm_hvac_on, &dm_hvac_off};
 DX_GPIO_BINDING *gpio_binding_sets[] = {&gpio_network_led, &gpio_operating_led};
-DX_TIMER_BINDING *timer_binding_sets[] = {&tmr_publish_telemetry, &tmr_read_telemetry, &tmr_update_device_twins};
+DX_TIMER_BINDING *timer_binding_sets[] = {&tmr_publish_telemetry, &tmr_read_telemetry, &tmr_update_device_twins, &tmr_hvac_restart_oneshot_timer};
 
 INTERCORE_BLOCK intercore_block;
 

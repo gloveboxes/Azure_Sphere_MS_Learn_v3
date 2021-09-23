@@ -35,86 +35,6 @@
 #include "main.h"
 
 /// <summary>
-/// Update temperature and pressure device twins
-/// Only update if data changed to minimise costs
-/// Only update if at least 15 seconds passed since the last update
-/// </summary>
-/// <param name="temperature"></param>
-/// <param name="pressure"></param>
-static void update_device_twins(EventLoopTimer *eventLoopTimer)
-{
-    if (ConsumeEventLoopTimerEvent(eventLoopTimer) != 0)
-    {
-        dx_terminate(DX_ExitCode_ConsumeEventLoopTimeEvent);
-        return;
-    }
-
-    if (telemetry.valid)
-    {
-        if (telemetry.previous.temperature != telemetry.latest.temperature)
-        {
-            telemetry.previous.temperature = telemetry.latest.temperature;
-            // Update temperature device twin
-            dx_deviceTwinReportValue(&dt_env_temperature, &telemetry.latest.temperature);
-        }
-
-        if (telemetry.previous.pressure != telemetry.latest.pressure)
-        {
-            telemetry.previous.pressure = telemetry.latest.pressure;
-            // Update pressure device twin
-            dx_deviceTwinReportValue(&dt_env_pressure, &telemetry.latest.pressure);
-        }
-
-        if (telemetry.previous.humidity != telemetry.latest.humidity)
-        {
-            telemetry.previous.humidity = telemetry.latest.humidity;
-            // Update humidity device twin
-            dx_deviceTwinReportValue(&dt_env_humidity, &telemetry.latest.humidity);
-        }
-
-        if (telemetry.latest_operating_mode != HVAC_MODE_UNKNOWN && telemetry.latest_operating_mode != telemetry.previous_operating_mode)
-        {
-            telemetry.previous_operating_mode = telemetry.latest_operating_mode;
-            // Update operating mode device twin
-            dx_deviceTwinReportValue(&dt_hvac_operating_mode, hvac_state[telemetry.latest_operating_mode]);
-        }
-    }
-}
-
-/// <summary>
-/// Set the temperature status led.
-/// Red to turn on heater to reach desired temperature.
-/// Blue to turn on cooler to reach desired temperature
-/// Green equals just right, no action required.
-/// </summary>
-void set_hvac_operating_mode(void)
-{
-    if (!dt_hvac_target_temperature.propertyUpdated || !telemetry.updated)
-    {
-        return;
-    }
-
-    int target_temperature = *(int *)dt_hvac_target_temperature.propertyValue;
-
-    telemetry.latest_operating_mode = telemetry.latest.temperature == target_temperature  ? HVAC_MODE_GREEN
-                                      : telemetry.latest.temperature > target_temperature ? HVAC_MODE_COOLING
-                                                                                          : HVAC_MODE_HEATING;
-
-    if (telemetry.previous_operating_mode != telemetry.latest_operating_mode)
-    {
-        // minus one as first item is HVAC_MODE_UNKNOWN
-        if (telemetry.previous_operating_mode != HVAC_MODE_UNKNOWN)
-        {
-            dx_gpioOff(gpio_ledRgb[telemetry.previous_operating_mode - 1]);
-        }
-        telemetry.previous_operating_mode = telemetry.latest_operating_mode;
-    }
-
-    // minus one as first item is HVAC_MODE_UNKNOWN
-    dx_gpioOn(gpio_ledRgb[telemetry.latest_operating_mode - 1]);
-}
-
-/// <summary>
 /// Validate sensor readings and publish HVAC telemetry
 /// </summary>
 /// <param name="eventLoopTimer"></param>
@@ -184,59 +104,20 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
                       IN_RANGE(telemetry.latest.pressure, 800, 1200) &&
                       IN_RANGE(telemetry.latest.humidity, 0, 100);
     // clang-format on
-
-    // Set the HVAC Operating mode color
-    set_hvac_operating_mode();
 }
 
-// This device twin callback demonstrates how to manage device twins of type string.
-// A reference to the string is passed that is available only for the lifetime of the callback.
-// You must copy to a global char array to preserve the string outside of the callback.
-// As strings are arbitrary length on a constrained device this gives you, the developer, control of
-// memory allocation.
-static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding)
-{
-    char *panel_message = (char *)deviceTwinBinding->propertyValue;
-
-    // Is the message size less than the destination buffer size and printable characters
-    if (strlen(panel_message) < sizeof(display_panel_message) && dx_isStringPrintable(panel_message))
-    {
-        strncpy(display_panel_message, panel_message, sizeof(display_panel_message));
-        Log_Debug("Virtual HVAC Display Panel Message: %s\n", display_panel_message);
-        // IoT Plug and Play acknowledge completed
-        dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_COMPLETED);
-    }
-    else
-    {
-        Log_Debug("Local copy failed. String too long or invalid data\n");
-        // IoT Plug and Play acknowledge error
-        dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_ERROR);
-    }
-}
-
-/// <summary>
-/// dt_set_target_temperature_handler callback handler is called when TargetTemperature device twin
-/// message received HVAC operating mode LED updated and IoT Plug and Play device twin acknowledged
-/// </summary>
-/// <param name="deviceTwinBinding"></param>
-static void dt_set_target_temperature_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding)
-{
-    if (IN_RANGE(*(int *)deviceTwinBinding->propertyValue, 0, 50))
-    {
-        // Set the HVAC Operating mode color
-        set_hvac_operating_mode();
-        dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_COMPLETED);
-    }
-    else
-    {
-        dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_ERROR);
-    }
-}
+/***********************************************************************************************************
+ * REMOTE OPERATIONS
+ *
+ * Restart HVAC
+ * Set HVAC panel message
+ * Turn HVAC on and off
+ **********************************************************************************************************/
 
 /// <summary>
 /// Restart the Device
 /// </summary>
-static void DelayRestartDeviceTimerHandler(EventLoopTimer *eventLoopTimer)
+static void hvac_delay_restart_handler(EventLoopTimer *eventLoopTimer)
 {
     if (ConsumeEventLoopTimerEvent(eventLoopTimer) != 0)
     {
@@ -249,7 +130,7 @@ static void DelayRestartDeviceTimerHandler(EventLoopTimer *eventLoopTimer)
 /// <summary>
 /// Start Device Power Restart Direct Method 'ResetMethod' integer seconds eg 5
 /// </summary>
-static DX_DIRECT_METHOD_RESPONSE_CODE RestartDeviceHandler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
+static DX_DIRECT_METHOD_RESPONSE_CODE hvac_restart_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
 {
     // Allocate and initialize a response message buffer. The
     // calling function is responsible for the freeing memory
@@ -275,7 +156,7 @@ static DX_DIRECT_METHOD_RESPONSE_CODE RestartDeviceHandler(JSON_Value *json, DX_
 
         // Set One Shot DX_TIMER_BINDING
         period = (struct timespec){.tv_sec = seconds, .tv_nsec = 0};
-        dx_timerOneShotSet(&restart_device_oneshot_timer, &period);
+        dx_timerOneShotSet(&tmr_hvac_restart_oneshot_timer, &period);
 
         return DX_METHOD_SUCCEEDED;
     }
@@ -308,16 +189,6 @@ static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRE
 /// <param name="connected"></param>
 static void connection_status(bool connected)
 {
-    static bool first_time_only = true;
-
-    if (first_time_only && connected)
-    {
-        first_time_only = false;
-        snprintf(msgBuffer, sizeof(msgBuffer), "Sample version: %s, DevX version: %s", SAMPLE_VERSION_NUMBER, AZURE_SPHERE_DEVX_VERSION);
-        dx_deviceTwinReportValue(&dt_hvac_sw_version, msgBuffer);                                  // DX_TYPE_STRING
-        dx_deviceTwinReportValue(&dt_utc_startup, dx_getCurrentUtc(msgBuffer, sizeof(msgBuffer))); // DX_TYPE_STRING
-    }
-
     dx_gpioStateSet(&gpio_network_led, connected);
 }
 

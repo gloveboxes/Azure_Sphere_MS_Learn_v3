@@ -49,3 +49,6 @@
 [submodule "Lab_6_Real_Time_Enviromon_RTOS/HardwareDefinitions"]
 	path = Lab_6_Real_Time_Enviromon_RTOS/HardwareDefinitions
 	url = https://github.com/Azure-Sphere-DevX/AzureSphereDevX.HardwareDefinitions.git
+[submodule "Lab_6_Real_Time_Enviromon_RTOS/threadx"]
+	path = Lab_6_Real_Time_Enviromon_RTOS/threadx
+	url = https://github.com/azure-rtos/threadx

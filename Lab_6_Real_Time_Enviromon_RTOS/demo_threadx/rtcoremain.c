@@ -59,6 +59,8 @@ void _putchar(char character)
         mtk_os_hal_uart_put_char(uart_port_num, '\r');
 }
 
+
+
 _Noreturn void RTCoreMain(void)
 {
 
@@ -70,6 +72,8 @@ _Noreturn void RTCoreMain(void)
     printf("UART Initialized (port_num=%d)\n", uart_port_num);
 
     main();
+
+    // Avoid warnings that main() has noreturn
     for (;;)
         __asm__("wfi");
 }

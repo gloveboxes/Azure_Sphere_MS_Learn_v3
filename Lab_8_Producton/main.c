@@ -416,6 +416,7 @@ static void InitPeripheralsAndHandlers(void)
 
     dx_gpioSetOpen(gpio_binding_sets, NELEMS(gpio_binding_sets));
     dx_timerSetStart(timer_binding_sets, NELEMS(timer_binding_sets));
+    dx_deviceTwinSubscribe(device_twin_bindings, NELEMS(device_twin_bindings));
     dx_directMethodSubscribe(direct_method_binding_sets, NELEMS(direct_method_binding_sets));
 
     dx_azureRegisterConnectionChangedNotification(connection_status);
@@ -435,6 +436,7 @@ static void InitPeripheralsAndHandlers(void)
 static void ClosePeripheralsAndHandlers(void)
 {
     dx_timerSetStop(timer_binding_sets, NELEMS(timer_binding_sets));
+    dx_deviceTwinUnsubscribe();
     dx_directMethodUnsubscribe();
     dx_gpioSetClose(gpio_binding_sets, NELEMS(gpio_binding_sets));
     dx_timerEventLoopStop();

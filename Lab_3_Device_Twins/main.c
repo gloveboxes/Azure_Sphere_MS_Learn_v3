@@ -78,13 +78,6 @@ static void update_device_twins(EventLoopTimer *eventLoopTimer)
             // Update humidity device twin
             dx_deviceTwinReportValue(&dt_env_humidity, &telemetry.latest.humidity);
         }
-
-        if (telemetry.latest_operating_mode != HVAC_MODE_UNKNOWN && telemetry.latest_operating_mode != telemetry.previous_operating_mode)
-        {
-            telemetry.previous_operating_mode = telemetry.latest_operating_mode;
-            // Update operating mode device twin
-            dx_deviceTwinReportValue(&dt_hvac_operating_mode, hvac_state[telemetry.latest_operating_mode]);
-        }
     }
 }
 
@@ -112,6 +105,8 @@ void set_hvac_operating_mode(void)
                 dx_gpioOff(gpio_ledRgb[telemetry.previous_operating_mode - 1]);
             }
             telemetry.previous_operating_mode = telemetry.latest_operating_mode;
+            // Update HVAC operating more device twin
+            dx_deviceTwinReportValue(&dt_hvac_operating_mode, hvac_state[telemetry.latest_operating_mode]);
         }
 
         // minus one as first item is HVAC_MODE_UNKNOWN
@@ -176,7 +171,8 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
     telemetry.updated = true;
 
     // clang-format off
-	telemetry.valid = IN_RANGE(telemetry.latest.temperature, -20, 50) &&
+	telemetry.valid = 
+        IN_RANGE(telemetry.latest.temperature, -20, 50) &&
 		IN_RANGE(telemetry.latest.pressure, 800, 1200) &&
 		IN_RANGE(telemetry.latest.humidity, 0, 100);
     // clang-format on
@@ -264,6 +260,7 @@ static void connection_status(bool connected)
 /// </summary>
 static void InitPeripheralsAndHandlers(void)
 {
+    onboard_sensors_init();
     dx_Log_Debug_Init(Log_Debug_Time_buffer, sizeof(Log_Debug_Time_buffer));
     dx_azureConnect(&dx_config, NETWORK_INTERFACE, IOT_PLUG_AND_PLAY_MODEL_ID);
     dx_gpioSetOpen(gpio_binding_sets, NELEMS(gpio_binding_sets));

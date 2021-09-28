@@ -98,7 +98,8 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
     telemetry.updated = true;
 
     // clang-format off
-	telemetry.valid = IN_RANGE(telemetry.latest.temperature, -20, 50) &&
+	telemetry.valid = 
+        IN_RANGE(telemetry.latest.temperature, -20, 50) &&
 		IN_RANGE(telemetry.latest.pressure, 800, 1200) &&
 		IN_RANGE(telemetry.latest.humidity, 0, 100);
     // clang-format on
@@ -216,10 +217,10 @@ static void connection_status(bool connected)
 /// </summary>
 static void InitPeripheralsAndHandlers(void)
 {
+    onboard_sensors_init();
     dx_Log_Debug_Init(Log_Debug_Time_buffer, sizeof(Log_Debug_Time_buffer));
     dx_azureConnect(&dx_config, NETWORK_INTERFACE, IOT_PLUG_AND_PLAY_MODEL_ID);
     dx_gpioSetOpen(gpio_bindings, NELEMS(gpio_bindings));
-    dx_gpioSetOpen(gpio_ledRgb, NELEMS(gpio_ledRgb));
     dx_timerSetStart(timer_bindings, NELEMS(timer_bindings));
     dx_deviceTwinSubscribe(device_twin_bindings, NELEMS(device_twin_bindings));
     dx_directMethodSubscribe(direct_method_bindings, NELEMS(direct_method_bindings));

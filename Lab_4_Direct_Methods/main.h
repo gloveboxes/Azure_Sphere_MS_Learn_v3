@@ -59,15 +59,9 @@ static DX_MESSAGE_CONTENT_PROPERTIES contentProperties = {.contentEncoding = "ut
 
 // declare gpio bindings
 static DX_GPIO_BINDING gpio_operating_led = {
-    .pin = LED2, .name = "gpio_operating_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
+    .pin = LED2, .name = "hvac_operating_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
 static DX_GPIO_BINDING gpio_network_led = {
     .pin = NETWORK_CONNECTED_LED, .name = "network_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
-
-// Create an RGB LED gpio binding set
-static DX_GPIO_BINDING *gpio_ledRgb[] = {
-    &(DX_GPIO_BINDING){.pin = LED_RED, .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true, .name = "red led"},
-    &(DX_GPIO_BINDING){.pin = LED_GREEN, .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true, .name = "green led"},
-    &(DX_GPIO_BINDING){.pin = LED_BLUE, .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true, .name = "blue led"}};
 
 // declare timer bindings
 static DX_TIMER_BINDING tmr_read_telemetry = {.period = {4, 0}, .name = "tmr_read_telemetry", .handler = read_telemetry_handler};

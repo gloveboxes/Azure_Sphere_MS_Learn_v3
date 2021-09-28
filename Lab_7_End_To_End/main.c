@@ -169,9 +169,10 @@ static void intercore_environment_receive_msg_handler(void *data_block, ssize_t 
         telemetry.updated = true;
 
         // clang-format off
-        telemetry.valid = IN_RANGE(telemetry.latest.temperature, -20, 50) && 
-                          IN_RANGE(telemetry.latest.pressure, 800, 1200) &&
-                          IN_RANGE(telemetry.latest.humidity, 0, 100);
+        telemetry.valid = 
+            IN_RANGE(telemetry.latest.temperature, -20, 50) && 
+            IN_RANGE(telemetry.latest.pressure, 800, 1200) &&
+            IN_RANGE(telemetry.latest.humidity, 0, 100);
         // clang-format on
         break;
     default:
@@ -310,10 +311,7 @@ static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRE
 /***********************************************************************************************************
  * PRODUCTION
  *
- * Add startup reporting
- * Add application level watchdog
- * Add deferred update support
- *
+ * Software version and connect UTC device twin reporting on first connect
  **********************************************************************************************************/
 
 /// <summary>
@@ -354,6 +352,7 @@ static void InitPeripheralsAndHandlers(void)
 
     dx_gpioSetOpen(gpio_binding_sets, NELEMS(gpio_binding_sets));
     dx_timerSetStart(timer_binding_sets, NELEMS(timer_binding_sets));
+    dx_deviceTwinSubscribe(device_twin_bindings, NELEMS(device_twin_bindings));
     dx_directMethodSubscribe(direct_method_binding_sets, NELEMS(direct_method_binding_sets));
 
     dx_azureRegisterConnectionChangedNotification(connection_status);
@@ -368,6 +367,7 @@ static void InitPeripheralsAndHandlers(void)
 static void ClosePeripheralsAndHandlers(void)
 {
     dx_timerSetStop(timer_binding_sets, NELEMS(timer_binding_sets));
+    dx_deviceTwinUnsubscribe();
     dx_directMethodUnsubscribe();
     dx_gpioSetClose(gpio_binding_sets, NELEMS(gpio_binding_sets));
     dx_timerEventLoopStop();

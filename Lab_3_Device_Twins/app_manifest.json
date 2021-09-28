@@ -5,7 +5,7 @@
   "EntryPoint": "/bin/app",
   "CmdArgs": [ "--ScopeID", "REPLACE_WITH_YOUR_AZURE_DPS_OR_IOT_CENTRAL_ID_SCOPE" ],
   "Capabilities": {
-    "Gpio": [ "$NETWORK_CONNECTED_LED", "$LED2" ],
+    "Gpio": [ "$NETWORK_CONNECTED_LED", "$LED2", "$LED_RED", "$LED_GREEN", "$LED_BLUE" ],
     "I2cMaster": [ "$I2cMaster2" ],
     "AllowedConnections": [
       "global.azure-devices-provisioning.net",

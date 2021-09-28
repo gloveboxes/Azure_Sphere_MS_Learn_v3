@@ -127,7 +127,6 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
     }
 }
 
-
 /***********************************************************************************************************
  * Integrate real-time core sensor
  *
@@ -180,7 +179,6 @@ static void intercore_environment_receive_msg_handler(void *data_block, ssize_t 
     }
 }
 
-
 /***********************************************************************************************************
  * REMOTE OPERATIONS: DEVICE TWINS
  *
@@ -232,7 +230,6 @@ static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBindi
         dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_ERROR);
     }
 }
-
 
 /***********************************************************************************************************
  * REMOTE OPERATIONS: DIRECT METHODS
@@ -310,7 +307,6 @@ static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRE
     return DX_METHOD_SUCCEEDED;
 }
 
-
 /***********************************************************************************************************
  * PRODUCTION
  *
@@ -338,7 +334,6 @@ static void connection_status(bool connected)
     }
     dx_gpioStateSet(&gpio_network_led, connected);
 }
-
 
 /***********************************************************************************************************
  * APPLICATION BASICS

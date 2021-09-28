@@ -58,14 +58,14 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
     if (telemetry.valid && dx_isAzureConnected())
     {
         // clang-format off
-        // Serialize telemetry as JSON
-        if (dx_jsonSerialize(msgBuffer, sizeof(msgBuffer), 6,                             
-            DX_JSON_INT, "MsgId", msgId++, 
-            DX_JSON_INT, "Temperature", telemetry.latest.temperature, 
-            DX_JSON_INT, "Pressure", telemetry.latest.pressure,
-            DX_JSON_INT, "Humidity", telemetry.latest.humidity,
-            DX_JSON_INT, "PeakUserMemoryKiB", (int)Applications_GetPeakUserModeMemoryUsageInKB(),
-            DX_JSON_INT, "TotalMemoryKiB", (int)Applications_GetTotalMemoryUsageInKB()))
+		// Serialize telemetry as JSON
+		if (dx_jsonSerialize(msgBuffer, sizeof(msgBuffer), 6,
+			DX_JSON_INT, "MsgId", msgId++,
+			DX_JSON_INT, "Temperature", telemetry.latest.temperature,
+			DX_JSON_INT, "Pressure", telemetry.latest.pressure,
+			DX_JSON_INT, "Humidity", telemetry.latest.humidity,
+			DX_JSON_INT, "PeakUserMemoryKiB", (int)Applications_GetPeakUserModeMemoryUsageInKB(),
+			DX_JSON_INT, "TotalMemoryKiB", (int)Applications_GetTotalMemoryUsageInKB()))
         // clang-format on
         {
             Log_Debug("%s\n", msgBuffer);
@@ -104,7 +104,6 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
     // clang-format on
 }
 
-
 /***********************************************************************************************************
  * PRODUCTION
  *
@@ -119,7 +118,6 @@ static void connection_status(bool connected)
 {
     dx_gpioStateSet(&gpio_network_led, connected);
 }
-
 
 /***********************************************************************************************************
  * APPLICATION BASICS

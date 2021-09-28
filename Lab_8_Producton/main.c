@@ -104,14 +104,14 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
     if (telemetry.valid && dx_isAzureConnected())
     {
         // clang-format off
-        // Serialize telemetry as JSON
-        if (dx_jsonSerialize(msgBuffer, sizeof(msgBuffer), 6,                             
-            DX_JSON_INT, "MsgId", msgId++, 
-            DX_JSON_INT, "Temperature", telemetry.latest.temperature, 
-            DX_JSON_INT, "Pressure", telemetry.latest.pressure,
-            DX_JSON_INT, "Humidity", telemetry.latest.humidity,
-            DX_JSON_INT, "PeakUserMemoryKiB", (int)Applications_GetPeakUserModeMemoryUsageInKB(),
-            DX_JSON_INT, "TotalMemoryKiB", (int)Applications_GetTotalMemoryUsageInKB()))
+		// Serialize telemetry as JSON
+		if (dx_jsonSerialize(msgBuffer, sizeof(msgBuffer), 6,
+			DX_JSON_INT, "MsgId", msgId++,
+			DX_JSON_INT, "Temperature", telemetry.latest.temperature,
+			DX_JSON_INT, "Pressure", telemetry.latest.pressure,
+			DX_JSON_INT, "Humidity", telemetry.latest.humidity,
+			DX_JSON_INT, "PeakUserMemoryKiB", (int)Applications_GetPeakUserModeMemoryUsageInKB(),
+			DX_JSON_INT, "TotalMemoryKiB", (int)Applications_GetTotalMemoryUsageInKB()))
         // clang-format on
         {
             Log_Debug("%s\n", msgBuffer);
@@ -126,7 +126,6 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
         }
     }
 }
-
 
 /***********************************************************************************************************
  * Integrate real-time core sensor
@@ -170,16 +169,15 @@ static void intercore_environment_receive_msg_handler(void *data_block, ssize_t 
         telemetry.updated = true;
 
         // clang-format off
-        telemetry.valid = IN_RANGE(telemetry.latest.temperature, -20, 50) && 
-                          IN_RANGE(telemetry.latest.pressure, 800, 1200) &&
-                          IN_RANGE(telemetry.latest.humidity, 0, 100);
+		telemetry.valid = IN_RANGE(telemetry.latest.temperature, -20, 50) &&
+			IN_RANGE(telemetry.latest.pressure, 800, 1200) &&
+			IN_RANGE(telemetry.latest.humidity, 0, 100);
         // clang-format on
         break;
     default:
         break;
     }
 }
-
 
 /***********************************************************************************************************
  * REMOTE OPERATIONS: DEVICE TWINS
@@ -232,7 +230,6 @@ static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBindi
         dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_ERROR);
     }
 }
-
 
 /***********************************************************************************************************
  * REMOTE OPERATIONS: DIRECT METHODS
@@ -309,7 +306,6 @@ static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRE
     dx_gpioOff(&gpio_operating_led);
     return DX_METHOD_SUCCEEDED;
 }
-
 
 /***********************************************************************************************************
  * PRODUCTION
@@ -401,7 +397,6 @@ static void connection_status(bool connected)
     dx_gpioStateSet(&gpio_network_led, connected);
 }
 
-
 /***********************************************************************************************************
  * APPLICATION BASICS
  *
@@ -428,7 +423,7 @@ static void InitPeripheralsAndHandlers(void)
     dx_deferredUpdateRegistration(DeferredUpdateCalculate, NULL);
 
     // Uncomment for production
-    //start_watchdog();
+    // start_watchdog();
 
     // initialize previous environment sensor variables
     telemetry.previous.temperature = telemetry.previous.pressure = telemetry.previous.humidity = INT32_MAX;

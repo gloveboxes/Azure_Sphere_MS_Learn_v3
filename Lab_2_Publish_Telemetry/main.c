@@ -122,10 +122,11 @@ static void connection_status(bool connected)
 
 
 /***********************************************************************************************************
- * APPLICATION
+ * APPLICATION BASICS
  *
- * Initialize/open resources
+ * Initialize resources
  * Close resources
+ * Run the main event loop
  **********************************************************************************************************/
 
 /// <summary>

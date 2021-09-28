@@ -52,3 +52,9 @@
 [submodule "Lab_2_Publish_Telemetry/AzureSphereDrivers"]
 	path = Lab_2_Publish_Telemetry/AzureSphereDrivers
 	url = https://github.com/Azure-Sphere-DevX/AzureSphereDrivers.git
+[submodule "Lab_8_Producton/HardwareDefinitions"]
+	path = Lab_8_Producton/HardwareDefinitions
+	url = https://github.com/Azure-Sphere-DevX/AzureSphereDevX.HardwareDefinitions.git
+[submodule "Lab_8_Producton/AzureSphereDevX"]
+	path = Lab_8_Producton/AzureSphereDevX
+	url = https://github.com/Azure-Sphere-DevX/AzureSphereDevX.git

@@ -98,7 +98,7 @@ static DX_DEVICE_TWIN_BINDING dt_utc_startup = {.propertyName = "StartupUtc", .t
 
 // declare gpio bindings
 static DX_GPIO_BINDING gpio_operating_led = {
-    .pin = LED2, .name = "gpio_operating_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
+    .pin = LED2, .name = "hvac_operating_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
 static DX_GPIO_BINDING gpio_network_led = {
     .pin = NETWORK_CONNECTED_LED, .name = "network_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
 

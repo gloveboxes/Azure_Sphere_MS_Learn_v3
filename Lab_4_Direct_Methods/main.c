@@ -34,8 +34,15 @@
 
 #include "main.h"
 
+/***********************************************************************************************************
+ * HVAC sensor data
+ *
+ * Read HVAC environment sensor
+ * Publish HVAC environment data
+ **********************************************************************************************************/
+
 /// <summary>
-/// Validate sensor readings and publish HVAC telemetry
+/// Publish HVAC telemetry
 /// </summary>
 /// <param name="eventLoopTimer"></param>
 static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
@@ -48,16 +55,7 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
         return;
     }
 
-    if (!dx_isAzureConnected() || !telemetry.updated)
-    {
-        return;
-    }
-
-    if (!telemetry.valid)
-    {
-        Log_Debug("ERROR: Invalid data from sensor.\n");
-    }
-    else
+    if (telemetry.valid && dx_isAzureConnected())
     {
         // clang-format off
         // Serialize telemetry as JSON
@@ -106,12 +104,35 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
     // clang-format on
 }
 
+
 /***********************************************************************************************************
  * REMOTE OPERATIONS: DIRECT METHODS
  *
  * Restart HVAC
  * Set HVAC panel message
  * Turn HVAC on and off
+ **********************************************************************************************************/
+
+// Direct method name = HvacOn
+static DX_DIRECT_METHOD_RESPONSE_CODE hvac_on_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
+{
+    dx_gpioOn(&gpio_operating_led);
+    return DX_METHOD_SUCCEEDED;
+}
+
+// Direct method name =HvacOff
+static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
+{
+    dx_gpioOff(&gpio_operating_led);
+    return DX_METHOD_SUCCEEDED;
+}
+
+
+/***********************************************************************************************************
+ * PRODUCTION
+ *
+ * Enable remote HVAC restart
+ * Set Azure connection state LED
  **********************************************************************************************************/
 
 /// <summary>
@@ -168,19 +189,12 @@ static DX_DIRECT_METHOD_RESPONSE_CODE hvac_restart_handler(JSON_Value *json, DX_
     }
 }
 
-// Direct method name = HvacOn
-static DX_DIRECT_METHOD_RESPONSE_CODE hvac_on_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
-{
-    dx_gpioOn(&gpio_operating_led);
-    return DX_METHOD_SUCCEEDED;
-}
+/***********************************************************************************************************
+ * PRODUCTION
+ *
+ * Set Azure connection state LED
+ **********************************************************************************************************/
 
-// Direct method name =HvacOff
-static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
-{
-    dx_gpioOff(&gpio_operating_led);
-    return DX_METHOD_SUCCEEDED;
-}
 
 /// <summary>
 /// ConnectionStatus callback handler is called the connection status changes
@@ -191,6 +205,15 @@ static void connection_status(bool connected)
 {
     dx_gpioStateSet(&gpio_network_led, connected);
 }
+
+
+/***********************************************************************************************************
+ * APPLICATION BASICS
+ *
+ * Initialize resources
+ * Close resources
+ * Run the main event loop
+ **********************************************************************************************************/
 
 /// <summary>
 ///  Initialize peripherals, device twins, direct methods, timer_bindings.

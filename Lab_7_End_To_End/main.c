@@ -33,10 +33,17 @@
 
 #include "main.h"
 
+/***********************************************************************************************************
+ * HVAC sensor data
+ *
+ * Read HVAC environment sensor
+ * Publish HVAC environment data
+ * Update HVAC Operating mode and current environment data
+ **********************************************************************************************************/
+
 /// <summary>
 /// Update temperature and pressure device twins
-/// Only update if data changed to minimise costs
-/// Only update if at least 15 seconds passed since the last update
+/// Only update if data changes to minimise costs
 /// </summary>
 /// <param name="temperature"></param>
 /// <param name="pressure"></param>
@@ -48,7 +55,7 @@ static void update_device_twins(EventLoopTimer *eventLoopTimer)
         return;
     }
 
-    if (telemetry.valid)
+    if (telemetry.valid && dx_isAzureConnected())
     {
         if (telemetry.previous.temperature != telemetry.latest.temperature)
         {
@@ -81,7 +88,7 @@ static void update_device_twins(EventLoopTimer *eventLoopTimer)
 }
 
 /// <summary>
-/// Validate sensor readings and publish HVAC telemetry
+/// Publish HVAC telemetry
 /// </summary>
 /// <param name="eventLoopTimer"></param>
 static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
@@ -94,16 +101,7 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
         return;
     }
 
-    if (!dx_isAzureConnected() || !telemetry.updated)
-    {
-        return;
-    }
-
-    if (!telemetry.valid)
-    {
-        Log_Debug("ERROR: Invalid data from sensor.\n");
-    }
-    else
+    if (telemetry.valid && dx_isAzureConnected())
     {
         // clang-format off
         // Serialize telemetry as JSON
@@ -128,6 +126,7 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
         }
     }
 }
+
 
 /***********************************************************************************************************
  * Integrate real-time core sensor
@@ -181,6 +180,7 @@ static void intercore_environment_receive_msg_handler(void *data_block, ssize_t 
     }
 }
 
+
 /***********************************************************************************************************
  * REMOTE OPERATIONS: DEVICE TWINS
  *
@@ -232,6 +232,7 @@ static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBindi
         dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_ERROR);
     }
 }
+
 
 /***********************************************************************************************************
  * REMOTE OPERATIONS: DIRECT METHODS
@@ -309,18 +310,18 @@ static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRE
     return DX_METHOD_SUCCEEDED;
 }
 
+
 /***********************************************************************************************************
  * PRODUCTION
  *
  * Add startup reporting
- * Add application level watchdox
+ * Add application level watchdog
  * Add deferred update support
- * Add application level watchdox
  *
  **********************************************************************************************************/
 
 /// <summary>
-/// ConnectionStatus callback handler is called the connection status changes
+/// ConnectionStatus callback handler is called when the connection status changes
 /// On first connection the startup time (UTC) and software version device twins are updated
 /// </summary>
 /// <param name="connected"></param>
@@ -337,6 +338,15 @@ static void connection_status(bool connected)
     }
     dx_gpioStateSet(&gpio_network_led, connected);
 }
+
+
+/***********************************************************************************************************
+ * APPLICATION BASICS
+ *
+ * Initialize resources
+ * Close resources
+ * Run the main event loop
+ **********************************************************************************************************/
 
 /// <summary>
 ///  Initialize peripherals, device twins, direct methods, timer_binding_sets.

@@ -34,10 +34,17 @@
 
 #include "main.h"
 
+/***********************************************************************************************************
+ * HVAC sensor data
+ *
+ * Read HVAC environment sensor
+ * Publish HVAC environment data
+ * Update HVAC Operating mode and current environment data
+ **********************************************************************************************************/
+
 /// <summary>
 /// Update temperature and pressure device twins
-/// Only update if data changed to minimise costs
-/// Only update if at least 15 seconds passed since the last update
+/// Only update if data changes to minimise costs
 /// </summary>
 /// <param name="temperature"></param>
 /// <param name="pressure"></param>
@@ -49,7 +56,7 @@ static void update_device_twins(EventLoopTimer *eventLoopTimer)
         return;
     }
 
-    if (telemetry.valid)
+    if (telemetry.valid && dx_isAzureConnected())
     {
         if (telemetry.previous.temperature != telemetry.latest.temperature)
         {
@@ -89,33 +96,31 @@ static void update_device_twins(EventLoopTimer *eventLoopTimer)
 /// </summary>
 void set_hvac_operating_mode(void)
 {
-    if (!dt_hvac_target_temperature.propertyUpdated || !telemetry.updated)
+    if (dt_hvac_target_temperature.propertyUpdated && telemetry.updated)
     {
-        return;
-    }
+        int target_temperature = *(int *)dt_hvac_target_temperature.propertyValue;
 
-    int target_temperature = *(int *)dt_hvac_target_temperature.propertyValue;
+        telemetry.latest_operating_mode = telemetry.latest.temperature == target_temperature  ? HVAC_MODE_GREEN
+                                          : telemetry.latest.temperature > target_temperature ? HVAC_MODE_COOLING
+                                                                                              : HVAC_MODE_HEATING;
 
-    telemetry.latest_operating_mode = telemetry.latest.temperature == target_temperature  ? HVAC_MODE_GREEN
-                                      : telemetry.latest.temperature > target_temperature ? HVAC_MODE_COOLING
-                                                                                          : HVAC_MODE_HEATING;
-
-    if (telemetry.previous_operating_mode != telemetry.latest_operating_mode)
-    {
-        // minus one as first item is HVAC_MODE_UNKNOWN
-        if (telemetry.previous_operating_mode != HVAC_MODE_UNKNOWN)
+        if (telemetry.previous_operating_mode != telemetry.latest_operating_mode)
         {
-            dx_gpioOff(gpio_ledRgb[telemetry.previous_operating_mode - 1]);
+            // minus one as first item is HVAC_MODE_UNKNOWN
+            if (telemetry.previous_operating_mode != HVAC_MODE_UNKNOWN)
+            {
+                dx_gpioOff(gpio_ledRgb[telemetry.previous_operating_mode - 1]);
+            }
+            telemetry.previous_operating_mode = telemetry.latest_operating_mode;
         }
-        telemetry.previous_operating_mode = telemetry.latest_operating_mode;
-    }
 
-    // minus one as first item is HVAC_MODE_UNKNOWN
-    dx_gpioOn(gpio_ledRgb[telemetry.latest_operating_mode - 1]);
+        // minus one as first item is HVAC_MODE_UNKNOWN
+        dx_gpioOn(gpio_ledRgb[telemetry.latest_operating_mode - 1]);
+    }
 }
 
 /// <summary>
-/// Validate sensor readings and publish HVAC telemetry
+/// Publish HVAC telemetry
 /// </summary>
 /// <param name="eventLoopTimer"></param>
 static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
@@ -128,16 +133,7 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
         return;
     }
 
-    if (!dx_isAzureConnected() || !telemetry.updated)
-    {
-        return;
-    }
-
-    if (!telemetry.valid)
-    {
-        Log_Debug("ERROR: Invalid data from sensor.\n");
-    }
-    else
+    if (telemetry.valid && dx_isAzureConnected())
     {
         // clang-format off
         // Serialize telemetry as JSON
@@ -189,6 +185,33 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
     set_hvac_operating_mode();
 }
 
+
+/***********************************************************************************************************
+ * REMOTE OPERATIONS: DEVICE TWINS
+ *
+ * Set target HVAC temperature
+ * Set HVAC panel message
+ **********************************************************************************************************/
+
+/// <summary>
+/// dt_set_target_temperature_handler callback handler is called when TargetTemperature device twin
+/// message received HVAC operating mode LED updated and IoT Plug and Play device twin acknowledged
+/// </summary>
+/// <param name="deviceTwinBinding"></param>
+static void dt_set_target_temperature_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding)
+{
+    if (IN_RANGE(*(int *)deviceTwinBinding->propertyValue, 0, 50))
+    {
+        // Set the HVAC Operating mode color
+        set_hvac_operating_mode();
+        dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_COMPLETED);
+    }
+    else
+    {
+        dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_ERROR);
+    }
+}
+
 // This device twin callback demonstrates how to manage device twins of type string.
 // A reference to the string is passed that is available only for the lifetime of the callback.
 // You must copy to a global char array to preserve the string outside of the callback.
@@ -214,44 +237,30 @@ static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBindi
     }
 }
 
-/// <summary>
-/// dt_set_target_temperature_handler callback handler is called when TargetTemperature device twin
-/// message received HVAC operating mode LED updated and IoT Plug and Play device twin acknowledged
-/// </summary>
-/// <param name="deviceTwinBinding"></param>
-static void dt_set_target_temperature_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding)
-{
-    if (IN_RANGE(*(int *)deviceTwinBinding->propertyValue, 0, 50))
-    {
-        // Set the HVAC Operating mode color
-        set_hvac_operating_mode();
-        dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_COMPLETED);
-    }
-    else
-    {
-        dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_ERROR);
-    }
-}
+
+/***********************************************************************************************************
+ * PRODUCTION
+ *
+ * Set Azure connection state LED
+ **********************************************************************************************************/
 
 /// <summary>
-/// ConnectionStatus callback handler is called the connection status changes
-/// On first connection the startup time (UTC) and software version device twins are updated
+/// ConnectionStatus callback handler is called when the connection status changes
 /// </summary>
 /// <param name="connected"></param>
 static void connection_status(bool connected)
 {
-    static bool first_time_only = true;
-
-    if (first_time_only && connected)
-    {
-        first_time_only = false;
-        snprintf(msgBuffer, sizeof(msgBuffer), "Sample version: %s, DevX version: %s", SAMPLE_VERSION_NUMBER, AZURE_SPHERE_DEVX_VERSION);
-        dx_deviceTwinReportValue(&dt_hvac_sw_version, msgBuffer);                                  // DX_TYPE_STRING
-        dx_deviceTwinReportValue(&dt_utc_startup, dx_getCurrentUtc(msgBuffer, sizeof(msgBuffer))); // DX_TYPE_STRING
-    }
-
     dx_gpioStateSet(&gpio_network_led, connected);
 }
+
+
+/***********************************************************************************************************
+ * APPLICATION BASICS
+ *
+ * Initialize resources
+ * Close resources
+ * Run the main event loop
+ **********************************************************************************************************/
 
 /// <summary>
 ///  Initialize peripherals, device twins, direct methods, timer_binding_sets.

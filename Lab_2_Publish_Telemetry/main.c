@@ -34,8 +34,15 @@
 
 #include "main.h"
 
+/***********************************************************************************************************
+ * HVAC sensor data
+ *
+ * Read HVAC environment sensor
+ * Publish HVAC environment data
+ **********************************************************************************************************/
+
 /// <summary>
-/// Validate sensor readings and publish HVAC telemetry
+/// Publish HVAC telemetry
 /// </summary>
 /// <param name="eventLoopTimer"></param>
 static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
@@ -48,26 +55,17 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
         return;
     }
 
-    if (!dx_isAzureConnected() || !telemetry.updated)
-    {
-        return;
-    }
-
-    if (!telemetry.valid)
-    {
-        Log_Debug("ERROR: Invalid data from sensor.\n");
-    }
-    else
+    if (telemetry.valid && dx_isAzureConnected())
     {
         // clang-format off
-		// Serialize telemetry as JSON
-		if (dx_jsonSerialize(msgBuffer, sizeof(msgBuffer), 6,
-			DX_JSON_INT, "MsgId", msgId++,
-			DX_JSON_INT, "Temperature", telemetry.latest.temperature,
-			DX_JSON_INT, "Pressure", telemetry.latest.pressure,
-			DX_JSON_INT, "Humidity", telemetry.latest.humidity,
-			DX_JSON_INT, "PeakUserMemoryKiB", (int)Applications_GetPeakUserModeMemoryUsageInKB(),
-			DX_JSON_INT, "TotalMemoryKiB", (int)Applications_GetTotalMemoryUsageInKB()))
+        // Serialize telemetry as JSON
+        if (dx_jsonSerialize(msgBuffer, sizeof(msgBuffer), 6,                             
+            DX_JSON_INT, "MsgId", msgId++, 
+            DX_JSON_INT, "Temperature", telemetry.latest.temperature, 
+            DX_JSON_INT, "Pressure", telemetry.latest.pressure,
+            DX_JSON_INT, "Humidity", telemetry.latest.humidity,
+            DX_JSON_INT, "PeakUserMemoryKiB", (int)Applications_GetPeakUserModeMemoryUsageInKB(),
+            DX_JSON_INT, "TotalMemoryKiB", (int)Applications_GetTotalMemoryUsageInKB()))
         // clang-format on
         {
             Log_Debug("%s\n", msgBuffer);
@@ -106,6 +104,30 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
     // clang-format on
 }
 
+
+/***********************************************************************************************************
+ * PRODUCTION
+ *
+ * Set Azure connection state LED
+ **********************************************************************************************************/
+
+/// <summary>
+/// ConnectionStatus callback handler is called when the connection status changes
+/// </summary>
+/// <param name="connected"></param>
+static void connection_status(bool connected)
+{
+    dx_gpioStateSet(&gpio_network_led, connected);
+}
+
+
+/***********************************************************************************************************
+ * APPLICATION
+ *
+ * Initialize/open resources
+ * Close resources
+ **********************************************************************************************************/
+
 /// <summary>
 ///  Initialize peripherals, device twins, direct methods, timer_binding_sets.
 /// </summary>
@@ -115,6 +137,7 @@ static void InitPeripheralsAndHandlers(void)
     dx_azureConnect(&dx_config, NETWORK_INTERFACE, IOT_PLUG_AND_PLAY_MODEL_ID);
     dx_gpioSetOpen(gpio_binding_sets, NELEMS(gpio_binding_sets));
     dx_timerSetStart(timer_binding_sets, NELEMS(timer_binding_sets));
+    dx_azureRegisterConnectionChangedNotification(connection_status);
 }
 
 /// <summary>

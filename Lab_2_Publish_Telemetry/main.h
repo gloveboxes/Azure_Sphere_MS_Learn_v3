@@ -71,5 +71,5 @@ static DX_TIMER_BINDING tmr_publish_telemetry = {.period = {5, 0}, .name = "tmr_
 // All bindings referenced in the following binding sets are initialised in the InitPeripheralsAndHandlers function
 DX_DEVICE_TWIN_BINDING *device_twin_bindings[] = {};
 DX_DIRECT_METHOD_BINDING *direct_method_binding_sets[] = {};
-DX_GPIO_BINDING *gpio_binding_sets[] = {&gpio_network_led, &gpio_operating_led};
-DX_TIMER_BINDING *timer_binding_sets[] = {&tmr_publish_telemetry, &tmr_read_telemetry, &tmr_azure_status_led_off, &tmr_azure_status_led_on};
+DX_GPIO_BINDING *gpio_bindings[] = {&gpio_network_led, &gpio_operating_led};
+DX_TIMER_BINDING *timer_bindings[] = {&tmr_publish_telemetry, &tmr_read_telemetry, &tmr_azure_status_led_off, &tmr_azure_status_led_on};

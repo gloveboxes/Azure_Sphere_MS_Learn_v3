@@ -13,11 +13,10 @@ else()
     include(cmake/azsphere_board.cmake)
 endif()
 
+# Generate the Azure Sphere tools version from the azsphere show-version SDK tool
 execute_process(COMMAND azsphere show-version OUTPUT_VARIABLE SDK_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
 message(STATUS "SDK Version: ${SDK_VERSION}")
 azsphere_configure_tools(TOOLS_REVISION ${SDK_VERSION})
-
-#include(cmake/azsphere_config.cmake)
 
 add_compile_definitions(OSAI_AZURE_RTOS)
 

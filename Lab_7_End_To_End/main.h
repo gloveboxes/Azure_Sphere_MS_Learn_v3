@@ -44,6 +44,7 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer);
 static void update_device_twins(EventLoopTimer *eventLoopTimer);
 void azure_status_led_off_handler(EventLoopTimer *eventLoopTimer);
 void azure_status_led_on_handler(EventLoopTimer *eventLoopTimer);
+static void watchdog_handler(EventLoopTimer *eventLoopTimer);
 
 // Number of bytes to allocate for the JSON telemetry message for IoT Hub/Central
 #define JSON_MESSAGE_BYTES 256
@@ -71,6 +72,9 @@ typedef struct
 } ENVIRONMENT;
 
 ENVIRONMENT telemetry;
+
+const struct itimerspec watchdogInterval = {{60, 0}, {60, 0}};
+timer_t watchdogTimer;
 
 #define Log_Debug(f_, ...) dx_Log_Debug((f_), ##__VA_ARGS__)
 static char Log_Debug_Time_buffer[128];
@@ -113,6 +117,7 @@ static DX_TIMER_BINDING tmr_read_telemetry = {.period = {4, 0}, .name = "tmr_rea
 static DX_TIMER_BINDING tmr_publish_telemetry = {.period = {5, 0}, .name = "tmr_publish_telemetry", .handler = publish_telemetry_handler};
 static DX_TIMER_BINDING tmr_update_device_twins = {.period = {15, 0}, .name = "tmr_update_device_twins", .handler = update_device_twins};
 static DX_TIMER_BINDING tmr_hvac_restart_oneshot_timer = {.name = "tmr_hvac_restart_oneshot_timer", .handler = hvac_delay_restart_handler};
+static DX_TIMER_BINDING tmr_watchdog = {.period = {30, 0}, .name = "tmr_publish_telemetry", .handler = watchdog_handler};
 
 // Declare direct method bindings
 static DX_DIRECT_METHOD_BINDING dm_hvac_off = {.methodName = "HvacOff", .handler = hvac_off_handler};
@@ -124,9 +129,10 @@ DX_DEVICE_TWIN_BINDING *device_twin_bindings[] = {&dt_utc_startup,  &dt_hvac_sw_
                                                   &dt_env_humidity, &dt_hvac_panel_message, &dt_hvac_operating_mode, &dt_hvac_target_temperature};
 
 DX_DIRECT_METHOD_BINDING *direct_method_binding_sets[] = {&dm_hvac_restart, &dm_hvac_on, &dm_hvac_off};
-DX_GPIO_BINDING *gpio_binding_sets[] = {&gpio_network_led, &gpio_operating_led};
-DX_TIMER_BINDING *timer_binding_sets[] = {&tmr_publish_telemetry,          &tmr_read_telemetry,       &tmr_update_device_twins,
-                                          &tmr_hvac_restart_oneshot_timer, &tmr_azure_status_led_off, &tmr_azure_status_led_on};
+DX_GPIO_BINDING *gpio_bindings[] = {&gpio_network_led, &gpio_operating_led};
+DX_TIMER_BINDING *timer_bindings[] = {
+    &tmr_publish_telemetry,   &tmr_read_telemetry, &tmr_update_device_twins, &tmr_hvac_restart_oneshot_timer, &tmr_azure_status_led_off,
+    &tmr_azure_status_led_on, &tmr_watchdog};
 
 INTERCORE_BLOCK intercore_block;
 

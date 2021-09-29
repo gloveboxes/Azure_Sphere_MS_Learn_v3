@@ -239,7 +239,7 @@ static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBindi
  **********************************************************************************************************/
 
 /// <summary>
-/// Called when the Azure connection status changes. First time will update HVAC SW version and startup UTC time
+/// Called when the Azure connection status changes then unregisters this callback
 /// </summary>
 /// <param name="connected"></param>
 static void hvac_startup_report(bool connected)

@@ -114,15 +114,15 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
  **********************************************************************************************************/
 
 /// <summary>
-///  Initialize peripherals, device twins, direct methods, timer_binding_sets.
+///  Initialize peripherals, device twins, direct methods, timer_bindings.
 /// </summary>
 static void InitPeripheralsAndHandlers(void)
 {
     onboard_sensors_init();
     dx_Log_Debug_Init(Log_Debug_Time_buffer, sizeof(Log_Debug_Time_buffer));
     dx_azureConnect(&dx_config, NETWORK_INTERFACE, IOT_PLUG_AND_PLAY_MODEL_ID);
-    dx_gpioSetOpen(gpio_binding_sets, NELEMS(gpio_binding_sets));
-    dx_timerSetStart(timer_binding_sets, NELEMS(timer_binding_sets));
+    dx_gpioSetOpen(gpio_bindings, NELEMS(gpio_bindings));
+    dx_timerSetStart(timer_bindings, NELEMS(timer_bindings));
     dx_azureRegisterConnectionChangedNotification(azure_connection_state);
 }
 
@@ -131,8 +131,8 @@ static void InitPeripheralsAndHandlers(void)
 /// </summary>
 static void ClosePeripheralsAndHandlers(void)
 {
-    dx_timerSetStop(timer_binding_sets, NELEMS(timer_binding_sets));
-    dx_gpioSetClose(gpio_binding_sets, NELEMS(gpio_binding_sets));
+    dx_timerSetStop(timer_bindings, NELEMS(timer_bindings));
+    dx_gpioSetClose(gpio_bindings, NELEMS(gpio_bindings));
     dx_timerEventLoopStop();
 }
 

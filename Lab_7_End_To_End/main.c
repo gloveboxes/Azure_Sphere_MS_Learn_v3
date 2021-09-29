@@ -259,6 +259,7 @@ static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRE
  *
  * Enable remote HVAC restart
  * Update software version and Azure connect UTC time device twins on first connection
+ * Enable and extend application level watchdog
  **********************************************************************************************************/
 
 /// <summary>
@@ -328,6 +329,40 @@ static void hvac_startup_report(bool connected)
     dx_azureUnregisterConnectionChangedNotification(hvac_startup_report);
 }
 
+/// <summary>
+/// This timer extends the app level lease watchdog
+/// </summary>
+/// <param name="eventLoopTimer"></param>
+static void watchdog_handler(EventLoopTimer *eventLoopTimer)
+{
+    if (ConsumeEventLoopTimerEvent(eventLoopTimer) != 0)
+    {
+        dx_terminate(DX_ExitCode_ConsumeEventLoopTimeEvent);
+        return;
+    }
+    timer_settime(watchdogTimer, 0, &watchdogInterval, NULL);
+}
+
+/// <summary>
+/// Set up watchdog timer - the lease is extended via the Watchdog_handler function
+/// </summary>
+/// <param name=""></param>
+void start_watchdog(void)
+{
+    struct sigevent alarmEvent;
+    alarmEvent.sigev_notify = SIGEV_SIGNAL;
+    alarmEvent.sigev_signo = SIGALRM;
+    alarmEvent.sigev_value.sival_ptr = &watchdogTimer;
+
+    if (timer_create(CLOCK_MONOTONIC, &alarmEvent, &watchdogTimer) == 0)
+    {
+        if (timer_settime(watchdogTimer, 0, &watchdogInterval, NULL) == -1)
+        {
+            Log_Debug("Issue setting watchdog timer. %s %d\n", strerror(errno), errno);
+        }
+    }
+}
+
 /***********************************************************************************************************
  * APPLICATION BASICS
  *
@@ -337,7 +372,7 @@ static void hvac_startup_report(bool connected)
  **********************************************************************************************************/
 
 /// <summary>
-///  Initialize peripherals, device twins, direct methods, timer_binding_sets.
+///  Initialize peripherals, device twins, direct methods, timer_bindings.
 /// </summary>
 static void InitPeripheralsAndHandlers(void)
 {
@@ -345,13 +380,16 @@ static void InitPeripheralsAndHandlers(void)
     dx_azureConnect(&dx_config, NETWORK_INTERFACE, IOT_PLUG_AND_PLAY_MODEL_ID);
     dx_intercoreConnect(&intercore_environment_ctx);
 
-    dx_gpioSetOpen(gpio_binding_sets, NELEMS(gpio_binding_sets));
-    dx_timerSetStart(timer_binding_sets, NELEMS(timer_binding_sets));
+    dx_gpioSetOpen(gpio_bindings, NELEMS(gpio_bindings));
+    dx_timerSetStart(timer_bindings, NELEMS(timer_bindings));
     dx_deviceTwinSubscribe(device_twin_bindings, NELEMS(device_twin_bindings));
     dx_directMethodSubscribe(direct_method_binding_sets, NELEMS(direct_method_binding_sets));
 
     dx_azureRegisterConnectionChangedNotification(azure_connection_state);
     dx_azureRegisterConnectionChangedNotification(hvac_startup_report);
+
+    // Uncomment for production
+    // start_watchdog();
 
     // initialize previous environment sensor variables
     telemetry.previous.temperature = telemetry.previous.pressure = telemetry.previous.humidity = INT32_MAX;
@@ -362,10 +400,10 @@ static void InitPeripheralsAndHandlers(void)
 /// </summary>
 static void ClosePeripheralsAndHandlers(void)
 {
-    dx_timerSetStop(timer_binding_sets, NELEMS(timer_binding_sets));
+    dx_timerSetStop(timer_bindings, NELEMS(timer_bindings));
     dx_deviceTwinUnsubscribe();
     dx_directMethodUnsubscribe();
-    dx_gpioSetClose(gpio_binding_sets, NELEMS(gpio_binding_sets));
+    dx_gpioSetClose(gpio_bindings, NELEMS(gpio_bindings));
     dx_timerEventLoopStop();
 }
 

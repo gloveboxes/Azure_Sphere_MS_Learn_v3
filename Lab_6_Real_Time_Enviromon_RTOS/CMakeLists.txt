@@ -13,7 +13,11 @@ else()
     include(cmake/azsphere_board.cmake)
 endif()
 
-include(cmake/azsphere_config.cmake)
+execute_process(COMMAND azsphere show-version OUTPUT_VARIABLE SDK_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
+message(STATUS "SDK Version: ${SDK_VERSION}")
+azsphere_configure_tools(TOOLS_REVISION ${SDK_VERSION})
+
+#include(cmake/azsphere_config.cmake)
 
 add_compile_definitions(OSAI_AZURE_RTOS)
 
@@ -71,25 +75,38 @@ set_target_properties (${PROJECT_NAME} PROPERTIES LINK_DEPENDS ${PROJECT_SOURCE_
 # Add MakeImage post-build command
 # include ("${AZURE_SPHERE_MAKE_IMAGE_FILE}")
 
+set(BOARD_COUNTER 0)
+
 if(AVNET)
+    MATH(EXPR BOARD_COUNTER "${BOARD_COUNTER}+1")
     add_definitions( -DOEM_AVNET=TRUE )
     azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/avnet_mt3620_sk" TARGET_DEFINITION "azure_sphere_learning_path.json")
 endif(AVNET)
 
 if(AVNET_REV_2)
+    MATH(EXPR BOARD_COUNTER "${BOARD_COUNTER}+1")
     add_definitions( -DOEM_AVNET=TRUE )
     azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/avnet_mt3620_sk_rev2" TARGET_DEFINITION "azure_sphere_learning_path.json")
 endif(AVNET_REV_2)
 
 if (SEEED_STUDIO_RDB)
+    MATH(EXPR BOARD_COUNTER "${BOARD_COUNTER}+1")
     add_definitions( -DOEM_SEEED_STUDIO=TRUE )
     azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/mt3620_rdb" TARGET_DEFINITION "azure_sphere_learning_path.json")
 endif()
 
 if (SEEED_STUDIO_MINI)
+    MATH(EXPR BOARD_COUNTER "${BOARD_COUNTER}+1")
     add_definitions( -DOEM_SEEED_STUDIO_MINI=TRUE )    
     azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/seeed_mt3620_mdb" TARGET_DEFINITION "azure_sphere_learning_path.json")
 endif(SEEED_STUDIO_MINI)
 
-azsphere_target_add_image_package(${PROJECT_NAME})
+if(BOARD_COUNTER EQUAL 0)
+    message(FATAL_ERROR "No Azure Sphere boards selected. Ensure one board set")
+endif()
 
+if(BOARD_COUNTER GREATER 1)
+    message(FATAL_ERROR "Multiple (${BOARD_COUNTER}) Azure Sphere boards selected. Ensure only one board set")
+endif()
+
+azsphere_target_add_image_package(${PROJECT_NAME})

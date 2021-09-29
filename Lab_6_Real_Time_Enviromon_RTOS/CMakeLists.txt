@@ -73,18 +73,22 @@ set_target_properties (${PROJECT_NAME} PROPERTIES LINK_DEPENDS ${PROJECT_SOURCE_
 
 if(AVNET)
     add_definitions( -DOEM_AVNET=TRUE )
+    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/avnet_mt3620_sk" TARGET_DEFINITION "azure_sphere_learning_path.json")
 endif(AVNET)
 
 if(AVNET_REV_2)
     add_definitions( -DOEM_AVNET=TRUE )
+    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/avnet_mt3620_sk_rev2" TARGET_DEFINITION "azure_sphere_learning_path.json")
 endif(AVNET_REV_2)
 
 if (SEEED_STUDIO_RDB)
     add_definitions( -DOEM_SEEED_STUDIO=TRUE )
+    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/mt3620_rdb" TARGET_DEFINITION "azure_sphere_learning_path.json")
 endif()
 
 if (SEEED_STUDIO_MINI)
     add_definitions( -DOEM_SEEED_STUDIO_MINI=TRUE )    
+    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/seeed_mt3620_mdb" TARGET_DEFINITION "azure_sphere_learning_path.json")
 endif(SEEED_STUDIO_MINI)
 
 azsphere_target_add_image_package(${PROJECT_NAME})

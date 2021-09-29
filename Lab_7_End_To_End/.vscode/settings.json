@@ -11,5 +11,9 @@
     "files.associations": {
         "dx_avnet_iot_connect.h": "c",
         "dx_json_serializer.h": "c"
+    },
+    "AzureSphere.partnerApplications": {
+        "6583cf17-d321-4d72-8283-0b7c5b56442b": "",
+        "25025d2c-66da-4448-bae1-ac26fcdd3627": "c:\\GitHub\\Azure_Sphere_MS_Learn_v3\\Lab_7_End_To_End\\app_manifest.json"
     }
 }

@@ -5,8 +5,8 @@
   "EntryPoint": "/bin/app",
   "CmdArgs": [],
   "Capabilities": {
-    "Gpio": [ 8, 9, 10 ],
-    "I2cMaster": [ "ISU2" ],
+    "Gpio": [ "$LED_RED", "$LED_GREEN", "$LED_BLUE"],
+    "I2cMaster": [ "$I2cMaster2" ],
     "AllowedApplicationConnections": [ "25025d2c-66da-4448-bae1-ac26fcdd3627" ]
   },
   "ApplicationType": "RealTimeCapable"

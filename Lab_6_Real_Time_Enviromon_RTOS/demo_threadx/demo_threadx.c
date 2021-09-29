@@ -39,7 +39,7 @@
 *************************************************************************************************************************************/
 
 #include "../IMU_lib/imu_temp_pressure.h"
-//#include "hw/azure_sphere_learning_path.h"
+#include "hw/azure_sphere_learning_path.h"
 #include "intercore_contract.h"
 #include "mt3620-intercore.h"
 #include "os_hal_gpio.h"
@@ -70,7 +70,7 @@ static const size_t payloadStart = 20;
 static int sensorSampleRateInSeconds = 500; // initialize to 5 seconds 500 ticks at 10ms a tick
 
 INTERCORE_BLOCK ic_control_block;
-INTERCORE_BLOCK enviroment_control_block;
+INTERCORE_BLOCK environment_control_block;
 
 enum LEDS { RED, GREEN, BLUE };
 
@@ -84,7 +84,7 @@ typedef struct {
 
 HVAC_MODE hvac_mode;
 
-int ledRgb[] = { OS_HAL_GPIO_8, OS_HAL_GPIO_9, OS_HAL_GPIO_10 };
+int ledRgb[] = { LED_RED, LED_GREEN, LED_BLUE };
 
 bool highLevelReady = false;
 
@@ -193,8 +193,8 @@ bool initialize_hardware(void) {
 			tx_thread_sleep(MS_TO_TICK(100));
 		}
 
-		enviroment_control_block.temperature = round(lp_get_temperature_lps22h());
-		enviroment_control_block.pressure = round(lp_get_pressure());
+		environment_control_block.temperature = round(lp_get_temperature_lps22h());
+		environment_control_block.pressure = round(lp_get_pressure());
 	}
 
 	// Open the red, green, and blue gpio ledRgb
@@ -208,6 +208,23 @@ bool initialize_hardware(void) {
 }
 #else
 bool initialize_hardware(void) {
+	environment_control_block.temperature = 20;
+	environment_control_block.pressure = 1000;
+
+#ifdef OEM_SEEED_STUDIO_MINI
+	// Open the red, green, and blue gpio ledRgb
+	for (size_t i = 0; i < 3; i++) {
+		mtk_os_hal_gpio_set_direction(ledRgb[i], OS_HAL_GPIO_DIR_OUTPUT);
+		mtk_os_hal_gpio_set_output(ledRgb[i], false);
+	}
+#else
+	// Open the red, green, and blue gpio ledRgb
+	for (size_t i = 0; i < 3; i++) {
+		mtk_os_hal_gpio_set_direction(ledRgb[i], OS_HAL_GPIO_DIR_OUTPUT);
+		mtk_os_hal_gpio_set_output(ledRgb[i], true);
+	}
+#endif
+
 	return true;
 }
 #endif
@@ -242,8 +259,8 @@ void timer_scheduler(ULONG input) {
 }
 
 void send_intercore_msg(void) {
-	memcpy((void*)&buf[payloadStart], (void*)&enviroment_control_block, sizeof(enviroment_control_block));
-	dataSize = payloadStart + sizeof(enviroment_control_block);
+	memcpy((void*)&buf[payloadStart], (void*)&environment_control_block, sizeof(environment_control_block));
+	dataSize = payloadStart + sizeof(environment_control_block);
 
 	EnqueueData(inbound, outbound, sharedBufSize, buf, dataSize);
 }
@@ -315,13 +332,22 @@ void set_hvac_operating_mode(int temperature) {
 
 	if (hvac_mode.previous_led != hvac_mode.current_led) {
 		// minus one as first item is HVAC_MODE_UNKNOWN
+#ifdef OEM_SEEED_STUDIO_MINI
+		mtk_os_hal_gpio_set_output(ledRgb[hvac_mode.previous_led - 1], false);
+#else
 		mtk_os_hal_gpio_set_output(ledRgb[hvac_mode.previous_led - 1], true);
+#endif
 		hvac_mode.previous_led = hvac_mode.current_led;
 	}
 
-	enviroment_control_block.operating_mode = hvac_mode.current_led;
+	environment_control_block.operating_mode = hvac_mode.current_led;
+#ifdef OEM_SEEED_STUDIO_MINI
+		// minus one as first item is HVAC_MODE_UNKNOWN
+	mtk_os_hal_gpio_set_output(ledRgb[hvac_mode.current_led - 1], true);
+#else
 	// minus one as first item is HVAC_MODE_UNKNOWN
 	mtk_os_hal_gpio_set_output(ledRgb[hvac_mode.current_led - 1], false);
+#endif
 }
 
 // sensor read
@@ -338,17 +364,17 @@ void read_sensor_thread(ULONG thread_input) {
 
 		if ((status != TX_SUCCESS) || (actual_flags != 0x1)) { break; }
 
-		enviroment_control_block.cmd = IC_READ_SENSOR;
+		environment_control_block.cmd = IC_READ_SENSOR;
 
-		enviroment_control_block.temperature = (int)lp_get_temperature_lps22h();
-		enviroment_control_block.pressure = (int)lp_get_pressure();
+		environment_control_block.temperature = (int)lp_get_temperature_lps22h();
+		environment_control_block.pressure = (int)lp_get_pressure();
 
 		rand_number = rand() % 20;
-		enviroment_control_block.humidity = 40 + rand_number;
+		environment_control_block.humidity = 40 + rand_number;
 
-		hvac_mode.last_temperature = enviroment_control_block.temperature;
+		hvac_mode.last_temperature = environment_control_block.temperature;
 
-		set_hvac_operating_mode(enviroment_control_block.temperature);
+		set_hvac_operating_mode(environment_control_block.temperature);
 	}
 }
 #else
@@ -365,20 +391,20 @@ void read_sensor_thread(ULONG thread_input) {
 
 		if ((status != TX_SUCCESS) || (actual_flags != 0x1)) { break; }
 
-		enviroment_control_block.cmd = IC_READ_SENSOR;
+		environment_control_block.cmd = IC_READ_SENSOR;
 
 		rand_number = (rand() % 10);
-		enviroment_control_block.temperature = 15 + rand_number;
+		environment_control_block.temperature = 15 + rand_number;
 
 		rand_number = (rand() % 100);
-		enviroment_control_block.pressure = 950 + rand_number;
+		environment_control_block.pressure = 950 + rand_number;
 
 		rand_number = (rand() % 20);
-		enviroment_control_block.humidity = 40 + rand_number;
+		environment_control_block.humidity = 40 + rand_number;
 
-		hvac_mode.last_temperature = enviroment_control_block.temperature;
+		hvac_mode.last_temperature = environment_control_block.temperature;
 
-		set_hvac_operating_mode(enviroment_control_block.temperature);
+		set_hvac_operating_mode(environment_control_block.temperature);
 	}
 }
 #endif

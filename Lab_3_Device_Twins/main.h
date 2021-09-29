@@ -6,6 +6,7 @@
 #include "dx_azure_iot.h"
 #include "dx_config.h"
 #include "dx_deferred_update.h"
+#include "dx_gpio.h"
 #include "dx_intercore.h"
 #include "dx_json_serializer.h"
 #include "dx_terminate.h"
@@ -16,6 +17,7 @@
 #include "hw/azure_sphere_learning_path.h" // Hardware definition
 #include "app_exit_codes.h"                // application specific exit codes
 #include "onboard_sensors.h"
+#include "onboard_status.h"
 
 #include <applibs/applications.h>
 #include <applibs/log.h>
@@ -32,6 +34,8 @@ static void dt_set_target_temperature_handler(DX_DEVICE_TWIN_BINDING *deviceTwin
 static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer);
 static void read_telemetry_handler(EventLoopTimer *eventLoopTimer);
 static void update_device_twins(EventLoopTimer *eventLoopTimer);
+void azure_status_led_off_handler(EventLoopTimer *eventLoopTimer);
+void azure_status_led_on_handler(EventLoopTimer *eventLoopTimer);
 
 // Number of bytes to allocate for the JSON telemetry message for IoT
 // Hub/Central
@@ -67,11 +71,13 @@ static DX_DEVICE_TWIN_BINDING dt_env_temperature = {.propertyName = "Temperature
 static DX_DEVICE_TWIN_BINDING dt_hvac_operating_mode = {.propertyName = "HvacOperatingMode", .twinType = DX_DEVICE_TWIN_STRING};
 static DX_DEVICE_TWIN_BINDING dt_hvac_panel_message = {
     .propertyName = "PanelMessage", .twinType = DX_DEVICE_TWIN_STRING, .handler = dt_set_panel_message_handler};
+static DX_DEVICE_TWIN_BINDING dt_hvac_sw_version = {.propertyName = "SoftwareVersion", .twinType = DX_DEVICE_TWIN_STRING};
 static DX_DEVICE_TWIN_BINDING dt_hvac_target_temperature = {
     .propertyName = "TargetTemperature", .twinType = DX_DEVICE_TWIN_INT, .handler = dt_set_target_temperature_handler};
+static DX_DEVICE_TWIN_BINDING dt_utc_startup = {.propertyName = "StartupUtc", .twinType = DX_DEVICE_TWIN_STRING};
 
 // declare gpio bindings
-static DX_GPIO_BINDING gpio_network_led = {
+DX_GPIO_BINDING gpio_network_led = {
     .pin = NETWORK_CONNECTED_LED, .name = "network_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
 
 // Create an RGB LED gpio binding set
@@ -81,15 +87,19 @@ static DX_GPIO_BINDING *gpio_ledRgb[] = {
     &(DX_GPIO_BINDING){.pin = LED_BLUE, .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true, .name = "blue led"}};
 
 // declare timer bindings
-static DX_TIMER_BINDING tmr_read_telemetry = {.period = {4, 0}, .name = "tmr_read_telemetry", .handler = read_telemetry_handler};
+DX_TIMER_BINDING tmr_azure_status_led_off = {.name = "tmr_azure_status_led_off", .handler = azure_status_led_off_handler};
+DX_TIMER_BINDING tmr_azure_status_led_on = {.period = {0, 500 * ONE_MS}, .name = "tmr_azure_status_led_on", .handler = azure_status_led_on_handler};
 static DX_TIMER_BINDING tmr_publish_telemetry = {.period = {5, 0}, .name = "tmr_publish_telemetry", .handler = publish_telemetry_handler};
+static DX_TIMER_BINDING tmr_read_telemetry = {.period = {4, 0}, .name = "tmr_read_telemetry", .handler = read_telemetry_handler};
 static DX_TIMER_BINDING tmr_update_device_twins = {.period = {15, 0}, .name = "tmr_update_device_twins", .handler = update_device_twins};
 
 // All bindings referenced in the following binding sets are initialised in the
 // InitPeripheralsAndHandlers function
 DX_DEVICE_TWIN_BINDING *device_twin_bindings[] = {&dt_env_temperature,    &dt_env_pressure,        &dt_env_humidity,
-                                                  &dt_hvac_panel_message, &dt_hvac_operating_mode, &dt_hvac_target_temperature};
+                                                  &dt_hvac_panel_message, &dt_hvac_operating_mode, &dt_hvac_target_temperature,
+                                                  &dt_hvac_sw_version,    &dt_utc_startup};
 
 DX_DIRECT_METHOD_BINDING *direct_method_binding_sets[] = {};
 DX_GPIO_BINDING *gpio_binding_sets[] = {&gpio_network_led};
-DX_TIMER_BINDING *timer_binding_sets[] = {&tmr_publish_telemetry, &tmr_read_telemetry, &tmr_update_device_twins};
+DX_TIMER_BINDING *timer_binding_sets[] = {&tmr_publish_telemetry, &tmr_read_telemetry, &tmr_update_device_twins, &tmr_azure_status_led_off,
+                                          &tmr_azure_status_led_on};

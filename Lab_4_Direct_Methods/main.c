@@ -189,22 +189,6 @@ static DX_DIRECT_METHOD_RESPONSE_CODE hvac_restart_handler(JSON_Value *json, DX_
 }
 
 /***********************************************************************************************************
- * PRODUCTION
- *
- * Set Azure connection state LED
- **********************************************************************************************************/
-
-/// <summary>
-/// ConnectionStatus callback handler is called the connection status changes
-/// On first connection the startup time (UTC) and software version device twins are updated
-/// </summary>
-/// <param name="connected"></param>
-static void connection_status(bool connected)
-{
-    dx_gpioStateSet(&gpio_network_led, connected);
-}
-
-/***********************************************************************************************************
  * APPLICATION BASICS
  *
  * Initialize resources
@@ -225,7 +209,7 @@ static void InitPeripheralsAndHandlers(void)
     dx_deviceTwinSubscribe(device_twin_bindings, NELEMS(device_twin_bindings));
     dx_directMethodSubscribe(direct_method_bindings, NELEMS(direct_method_bindings));
 
-    dx_azureRegisterConnectionChangedNotification(connection_status);
+    dx_azureRegisterConnectionChangedNotification(azure_connection_state);
 
     // initialize previous environment sensor variables
     telemetry.previous.temperature = telemetry.previous.pressure = telemetry.previous.humidity = INT32_MAX;

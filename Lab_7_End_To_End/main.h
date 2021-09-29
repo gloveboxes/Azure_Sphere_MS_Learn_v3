@@ -6,6 +6,7 @@
 #include "dx_azure_iot.h"
 #include "dx_config.h"
 #include "dx_deferred_update.h"
+#include "dx_gpio.h"
 #include "dx_intercore.h"
 #include "dx_json_serializer.h"
 #include "dx_terminate.h"
@@ -15,6 +16,7 @@
 
 #include "hw/azure_sphere_learning_path.h" // Hardware definition
 #include "app_exit_codes.h"                // application specific exit codes
+#include "onboard_status.h"
 
 #include "../IntercoreContract/intercore_contract.h"
 
@@ -40,6 +42,8 @@ static void intercore_environment_receive_msg_handler(void *data_block, ssize_t 
 static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer);
 static void read_telemetry_handler(EventLoopTimer *eventLoopTimer);
 static void update_device_twins(EventLoopTimer *eventLoopTimer);
+void azure_status_led_off_handler(EventLoopTimer *eventLoopTimer);
+void azure_status_led_on_handler(EventLoopTimer *eventLoopTimer);
 
 // Number of bytes to allocate for the JSON telemetry message for IoT Hub/Central
 #define JSON_MESSAGE_BYTES 256
@@ -99,10 +103,12 @@ static DX_DEVICE_TWIN_BINDING dt_utc_startup = {.propertyName = "StartupUtc", .t
 // declare gpio bindings
 static DX_GPIO_BINDING gpio_operating_led = {
     .pin = LED2, .name = "hvac_operating_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
-static DX_GPIO_BINDING gpio_network_led = {
+DX_GPIO_BINDING gpio_network_led = {
     .pin = NETWORK_CONNECTED_LED, .name = "network_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
 
 // declare timer bindings
+DX_TIMER_BINDING tmr_azure_status_led_off = {.name = "tmr_azure_status_led_off", .handler = azure_status_led_off_handler};
+DX_TIMER_BINDING tmr_azure_status_led_on = {.period = {0, 500 * ONE_MS}, .name = "tmr_azure_status_led_on", .handler = azure_status_led_on_handler};
 static DX_TIMER_BINDING tmr_read_telemetry = {.period = {4, 0}, .name = "tmr_read_telemetry", .handler = read_telemetry_handler};
 static DX_TIMER_BINDING tmr_publish_telemetry = {.period = {5, 0}, .name = "tmr_publish_telemetry", .handler = publish_telemetry_handler};
 static DX_TIMER_BINDING tmr_update_device_twins = {.period = {15, 0}, .name = "tmr_update_device_twins", .handler = update_device_twins};
@@ -119,7 +125,8 @@ DX_DEVICE_TWIN_BINDING *device_twin_bindings[] = {&dt_utc_startup,  &dt_hvac_sw_
 
 DX_DIRECT_METHOD_BINDING *direct_method_binding_sets[] = {&dm_hvac_restart, &dm_hvac_on, &dm_hvac_off};
 DX_GPIO_BINDING *gpio_binding_sets[] = {&gpio_network_led, &gpio_operating_led};
-DX_TIMER_BINDING *timer_binding_sets[] = {&tmr_publish_telemetry, &tmr_read_telemetry, &tmr_update_device_twins, &tmr_hvac_restart_oneshot_timer};
+DX_TIMER_BINDING *timer_binding_sets[] = {&tmr_publish_telemetry,          &tmr_read_telemetry,       &tmr_update_device_twins,
+                                          &tmr_hvac_restart_oneshot_timer, &tmr_azure_status_led_off, &tmr_azure_status_led_on};
 
 INTERCORE_BLOCK intercore_block;
 

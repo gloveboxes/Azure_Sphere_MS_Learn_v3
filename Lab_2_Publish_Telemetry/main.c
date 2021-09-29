@@ -106,21 +106,6 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
 }
 
 /***********************************************************************************************************
- * PRODUCTION
- *
- * Set Azure connection state LED
- **********************************************************************************************************/
-
-/// <summary>
-/// ConnectionStatus callback handler is called when the connection status changes
-/// </summary>
-/// <param name="connected"></param>
-static void connection_status(bool connected)
-{
-    dx_gpioStateSet(&gpio_network_led, connected);
-}
-
-/***********************************************************************************************************
  * APPLICATION BASICS
  *
  * Initialize resources
@@ -138,7 +123,7 @@ static void InitPeripheralsAndHandlers(void)
     dx_azureConnect(&dx_config, NETWORK_INTERFACE, IOT_PLUG_AND_PLAY_MODEL_ID);
     dx_gpioSetOpen(gpio_binding_sets, NELEMS(gpio_binding_sets));
     dx_timerSetStart(timer_binding_sets, NELEMS(timer_binding_sets));
-    dx_azureRegisterConnectionChangedNotification(connection_status);
+    dx_azureRegisterConnectionChangedNotification(azure_connection_state);
 }
 
 /// <summary>

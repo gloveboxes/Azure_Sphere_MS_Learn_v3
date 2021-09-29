@@ -311,15 +311,14 @@ static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRE
 /***********************************************************************************************************
  * PRODUCTION
  *
- * Software version and connect UTC device twin reporting on first connect
+ * Software version and Azure connect UTC time device twins updated
  **********************************************************************************************************/
 
 /// <summary>
-/// ConnectionStatus callback handler is called when the connection status changes
-/// On first connection the startup time (UTC) and software version device twins are updated
+/// Called when the Azure connection status changes. First time will update HVAC SW version and startup UTC time
 /// </summary>
 /// <param name="connected"></param>
-static void connection_status(bool connected)
+static void hvac_startup_report(bool connected)
 {
     static bool first_time_only = true;
 
@@ -330,7 +329,6 @@ static void connection_status(bool connected)
         dx_deviceTwinReportValue(&dt_hvac_sw_version, msgBuffer);                                  // DX_TYPE_STRING
         dx_deviceTwinReportValue(&dt_utc_startup, dx_getCurrentUtc(msgBuffer, sizeof(msgBuffer))); // DX_TYPE_STRING
     }
-    dx_gpioStateSet(&gpio_network_led, connected);
 }
 
 /***********************************************************************************************************
@@ -355,7 +353,8 @@ static void InitPeripheralsAndHandlers(void)
     dx_deviceTwinSubscribe(device_twin_bindings, NELEMS(device_twin_bindings));
     dx_directMethodSubscribe(direct_method_binding_sets, NELEMS(direct_method_binding_sets));
 
-    dx_azureRegisterConnectionChangedNotification(connection_status);
+    dx_azureRegisterConnectionChangedNotification(azure_connection_state);
+    dx_azureRegisterConnectionChangedNotification(hvac_startup_report);
 
     // initialize previous environment sensor variables
     telemetry.previous.temperature = telemetry.previous.pressure = telemetry.previous.humidity = INT32_MAX;

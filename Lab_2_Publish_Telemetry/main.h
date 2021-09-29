@@ -6,6 +6,7 @@
 #include "dx_azure_iot.h"
 #include "dx_config.h"
 #include "dx_deferred_update.h"
+#include "dx_gpio.h"
 #include "dx_intercore.h"
 #include "dx_json_serializer.h"
 #include "dx_terminate.h"
@@ -16,6 +17,7 @@
 #include "hw/azure_sphere_learning_path.h" // Hardware definition
 #include "app_exit_codes.h"                // application specific exit codes
 #include "onboard_sensors.h"
+#include "onboard_status.h"
 
 #include <applibs/applications.h>
 #include <applibs/log.h>
@@ -29,6 +31,8 @@
 // Forward declarations
 static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer);
 static void read_telemetry_handler(EventLoopTimer *eventLoopTimer);
+void azure_status_led_off_handler(EventLoopTimer *eventLoopTimer);
+void azure_status_led_on_handler(EventLoopTimer *eventLoopTimer);
 
 // Number of bytes to allocate for the JSON telemetry message for IoT Hub/Central
 #define JSON_MESSAGE_BYTES 256
@@ -55,10 +59,12 @@ static DX_MESSAGE_CONTENT_PROPERTIES contentProperties = {.contentEncoding = "ut
 // declare gpio bindings
 static DX_GPIO_BINDING gpio_operating_led = {
     .pin = LED2, .name = "gpio_operating_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
-static DX_GPIO_BINDING gpio_network_led = {
+DX_GPIO_BINDING gpio_network_led = {
     .pin = NETWORK_CONNECTED_LED, .name = "network_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
 
 // declare timer bindings
+DX_TIMER_BINDING tmr_azure_status_led_off = {.name = "tmr_azure_status_led_off", .handler = azure_status_led_off_handler};
+DX_TIMER_BINDING tmr_azure_status_led_on = {.period = {0, 500 * ONE_MS}, .name = "tmr_azure_status_led_on", .handler = azure_status_led_on_handler};
 static DX_TIMER_BINDING tmr_read_telemetry = {.period = {4, 0}, .name = "tmr_read_telemetry", .handler = read_telemetry_handler};
 static DX_TIMER_BINDING tmr_publish_telemetry = {.period = {5, 0}, .name = "tmr_publish_telemetry", .handler = publish_telemetry_handler};
 
@@ -66,4 +72,4 @@ static DX_TIMER_BINDING tmr_publish_telemetry = {.period = {5, 0}, .name = "tmr_
 DX_DEVICE_TWIN_BINDING *device_twin_bindings[] = {};
 DX_DIRECT_METHOD_BINDING *direct_method_binding_sets[] = {};
 DX_GPIO_BINDING *gpio_binding_sets[] = {&gpio_network_led, &gpio_operating_led};
-DX_TIMER_BINDING *timer_binding_sets[] = {&tmr_publish_telemetry, &tmr_read_telemetry};
+DX_TIMER_BINDING *timer_binding_sets[] = {&tmr_publish_telemetry, &tmr_read_telemetry, &tmr_azure_status_led_off, &tmr_azure_status_led_on};

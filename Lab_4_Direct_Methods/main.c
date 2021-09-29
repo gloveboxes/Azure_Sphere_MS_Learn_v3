@@ -131,7 +131,7 @@ static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRE
  * PRODUCTION
  *
  * Enable remote HVAC restart
- * Set Azure connection state LED
+ * Update software version and Azure connect UTC time device twins on first connection
  **********************************************************************************************************/
 
 /// <summary>
@@ -188,6 +188,19 @@ static DX_DIRECT_METHOD_RESPONSE_CODE hvac_restart_handler(JSON_Value *json, DX_
     }
 }
 
+/// <summary>
+/// Called when the Azure connection status changes then unregisters this callback
+/// </summary>
+/// <param name="connected"></param>
+static void hvac_startup_report(bool connected)
+{
+    snprintf(msgBuffer, sizeof(msgBuffer), "Sample version: %s, DevX version: %s", SAMPLE_VERSION_NUMBER, AZURE_SPHERE_DEVX_VERSION);
+    dx_deviceTwinReportValue(&dt_hvac_sw_version, msgBuffer);                                  // DX_TYPE_STRING
+    dx_deviceTwinReportValue(&dt_utc_startup, dx_getCurrentUtc(msgBuffer, sizeof(msgBuffer))); // DX_TYPE_STRING
+
+    dx_azureUnregisterConnectionChangedNotification(hvac_startup_report);
+}
+
 /***********************************************************************************************************
  * APPLICATION BASICS
  *
@@ -205,11 +218,13 @@ static void InitPeripheralsAndHandlers(void)
     dx_Log_Debug_Init(Log_Debug_Time_buffer, sizeof(Log_Debug_Time_buffer));
     dx_azureConnect(&dx_config, NETWORK_INTERFACE, IOT_PLUG_AND_PLAY_MODEL_ID);
     dx_gpioSetOpen(gpio_bindings, NELEMS(gpio_bindings));
+    dx_gpioSetOpen(gpio_ledRgb, NELEMS(gpio_ledRgb));
     dx_timerSetStart(timer_bindings, NELEMS(timer_bindings));
     dx_deviceTwinSubscribe(device_twin_bindings, NELEMS(device_twin_bindings));
     dx_directMethodSubscribe(direct_method_bindings, NELEMS(direct_method_bindings));
 
     dx_azureRegisterConnectionChangedNotification(azure_connection_state);
+    dx_azureRegisterConnectionChangedNotification(hvac_startup_report);
 
     // initialize previous environment sensor variables
     telemetry.previous.temperature = telemetry.previous.pressure = telemetry.previous.humidity = INT32_MAX;
@@ -224,6 +239,7 @@ static void ClosePeripheralsAndHandlers(void)
     dx_deviceTwinUnsubscribe();
     dx_directMethodUnsubscribe();
     dx_gpioSetClose(gpio_bindings, NELEMS(gpio_bindings));
+    dx_gpioSetClose(gpio_ledRgb, NELEMS(gpio_ledRgb));
     dx_timerEventLoopStop();
 }
 

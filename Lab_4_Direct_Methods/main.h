@@ -61,11 +61,21 @@ static DX_MESSAGE_PROPERTY *messageProperties[] = {&(DX_MESSAGE_PROPERTY){.key =
 /// </summary>
 static DX_MESSAGE_CONTENT_PROPERTIES contentProperties = {.contentEncoding = "utf-8", .contentType = "application/json"};
 
+// declare device twin bindings
+static DX_DEVICE_TWIN_BINDING dt_hvac_sw_version = {.propertyName = "SoftwareVersion", .twinType = DX_DEVICE_TWIN_STRING};
+static DX_DEVICE_TWIN_BINDING dt_utc_startup = {.propertyName = "StartupUtc", .twinType = DX_DEVICE_TWIN_STRING};
+
 // declare gpio bindings
 static DX_GPIO_BINDING gpio_operating_led = {
     .pin = LED2, .name = "hvac_operating_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
 DX_GPIO_BINDING gpio_network_led = {
     .pin = NETWORK_CONNECTED_LED, .name = "network_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
+
+// Create an RGB LED gpio binding set
+static DX_GPIO_BINDING *gpio_ledRgb[] = {
+    &(DX_GPIO_BINDING){.pin = LED_RED, .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true, .name = "red led"},
+    &(DX_GPIO_BINDING){.pin = LED_GREEN, .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true, .name = "green led"},
+    &(DX_GPIO_BINDING){.pin = LED_BLUE, .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true, .name = "blue led"}};
 
 // declare timer bindings
 DX_TIMER_BINDING tmr_azure_status_led_off = {.name = "tmr_azure_status_led_off", .handler = azure_status_led_off_handler};
@@ -81,8 +91,7 @@ static DX_DIRECT_METHOD_BINDING dm_hvac_restart = {.methodName = "HvacRestart", 
 
 // All bindings referenced in the following binding sets are initialised in the
 // InitPeripheralsAndHandlers function
-DX_DEVICE_TWIN_BINDING *device_twin_bindings[] = {};
-
+DX_DEVICE_TWIN_BINDING *device_twin_bindings[] = {&dt_hvac_sw_version, &dt_utc_startup};
 DX_DIRECT_METHOD_BINDING *direct_method_bindings[] = {&dm_hvac_restart, &dm_hvac_on, &dm_hvac_off};
 DX_GPIO_BINDING *gpio_bindings[] = {&gpio_network_led, &gpio_operating_led};
 DX_TIMER_BINDING *timer_bindings[] = {&tmr_publish_telemetry, &tmr_read_telemetry, &tmr_hvac_restart_oneshot_timer, &tmr_azure_status_led_off,

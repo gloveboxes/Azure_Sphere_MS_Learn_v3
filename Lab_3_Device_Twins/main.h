@@ -99,7 +99,7 @@ DX_DEVICE_TWIN_BINDING *device_twin_bindings[] = {&dt_env_temperature,    &dt_en
                                                   &dt_hvac_panel_message, &dt_hvac_operating_mode, &dt_hvac_target_temperature,
                                                   &dt_hvac_sw_version,    &dt_utc_startup};
 
-DX_DIRECT_METHOD_BINDING *direct_method_binding_sets[] = {};
-DX_GPIO_BINDING *gpio_binding_sets[] = {&gpio_network_led};
-DX_TIMER_BINDING *timer_binding_sets[] = {&tmr_publish_telemetry, &tmr_read_telemetry, &tmr_update_device_twins, &tmr_azure_status_led_off,
+DX_DIRECT_METHOD_BINDING *direct_method_bindings[] = {};
+DX_GPIO_BINDING *gpio_bindings[] = {&gpio_network_led};
+DX_TIMER_BINDING *timer_bindings[] = {&tmr_publish_telemetry, &tmr_read_telemetry, &tmr_update_device_twins, &tmr_azure_status_led_off,
                                           &tmr_azure_status_led_on};

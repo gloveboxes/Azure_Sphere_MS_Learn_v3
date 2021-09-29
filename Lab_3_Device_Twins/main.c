@@ -235,7 +235,7 @@ static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBindi
 /***********************************************************************************************************
  * PRODUCTION
  *
- * Software version and Azure connect UTC time device twins updated
+ * Update software version and Azure connect UTC time device twins on first connection
  **********************************************************************************************************/
 
 /// <summary>
@@ -244,15 +244,11 @@ static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBindi
 /// <param name="connected"></param>
 static void hvac_startup_report(bool connected)
 {
-    static bool first_time_only = true;
+    snprintf(msgBuffer, sizeof(msgBuffer), "Sample version: %s, DevX version: %s", SAMPLE_VERSION_NUMBER, AZURE_SPHERE_DEVX_VERSION);
+    dx_deviceTwinReportValue(&dt_hvac_sw_version, msgBuffer);                                  // DX_TYPE_STRING
+    dx_deviceTwinReportValue(&dt_utc_startup, dx_getCurrentUtc(msgBuffer, sizeof(msgBuffer))); // DX_TYPE_STRING
 
-    if (first_time_only && connected)
-    {
-        first_time_only = false;
-        snprintf(msgBuffer, sizeof(msgBuffer), "Sample version: %s, DevX version: %s", SAMPLE_VERSION_NUMBER, AZURE_SPHERE_DEVX_VERSION);
-        dx_deviceTwinReportValue(&dt_hvac_sw_version, msgBuffer);                                  // DX_TYPE_STRING
-        dx_deviceTwinReportValue(&dt_utc_startup, dx_getCurrentUtc(msgBuffer, sizeof(msgBuffer))); // DX_TYPE_STRING
-    }
+    dx_azureUnregisterConnectionChangedNotification(hvac_startup_report);
 }
 
 /***********************************************************************************************************
@@ -264,18 +260,18 @@ static void hvac_startup_report(bool connected)
  **********************************************************************************************************/
 
 /// <summary>
-///  Initialize peripherals, device twins, direct methods, timer_binding_sets.
+///  Initialize peripherals, device twins, direct methods, timer_bindings.
 /// </summary>
 static void InitPeripheralsAndHandlers(void)
 {
     onboard_sensors_init();
     dx_Log_Debug_Init(Log_Debug_Time_buffer, sizeof(Log_Debug_Time_buffer));
     dx_azureConnect(&dx_config, NETWORK_INTERFACE, IOT_PLUG_AND_PLAY_MODEL_ID);
-    dx_gpioSetOpen(gpio_binding_sets, NELEMS(gpio_binding_sets));
+    dx_gpioSetOpen(gpio_bindings, NELEMS(gpio_bindings));
     dx_gpioSetOpen(gpio_ledRgb, NELEMS(gpio_ledRgb));
-    dx_timerSetStart(timer_binding_sets, NELEMS(timer_binding_sets));
+    dx_timerSetStart(timer_bindings, NELEMS(timer_bindings));
     dx_deviceTwinSubscribe(device_twin_bindings, NELEMS(device_twin_bindings));
-    dx_directMethodSubscribe(direct_method_binding_sets, NELEMS(direct_method_binding_sets));
+    dx_directMethodSubscribe(direct_method_bindings, NELEMS(direct_method_bindings));
 
     dx_azureRegisterConnectionChangedNotification(azure_connection_state);
     dx_azureRegisterConnectionChangedNotification(hvac_startup_report);
@@ -289,10 +285,11 @@ static void InitPeripheralsAndHandlers(void)
 /// </summary>
 static void ClosePeripheralsAndHandlers(void)
 {
-    dx_timerSetStop(timer_binding_sets, NELEMS(timer_binding_sets));
+    dx_timerSetStop(timer_bindings, NELEMS(timer_bindings));
     dx_deviceTwinUnsubscribe();
     dx_directMethodUnsubscribe();
-    dx_gpioSetClose(gpio_binding_sets, NELEMS(gpio_binding_sets));
+    dx_gpioSetClose(gpio_bindings, NELEMS(gpio_bindings));
+    dx_gpioSetClose(gpio_ledRgb, NELEMS(gpio_ledRgb));
     dx_timerEventLoopStop();
 }
 

@@ -240,6 +240,27 @@ static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBindi
  * Turn HVAC on and off
  **********************************************************************************************************/
 
+// Direct method name = HvacOn
+static DX_DIRECT_METHOD_RESPONSE_CODE hvac_on_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
+{
+    dx_gpioOn(&gpio_operating_led);
+    return DX_METHOD_SUCCEEDED;
+}
+
+// Direct method name =HvacOff
+static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
+{
+    dx_gpioOff(&gpio_operating_led);
+    return DX_METHOD_SUCCEEDED;
+}
+
+/***********************************************************************************************************
+ * PRODUCTION
+ *
+ * Enable remote HVAC restart
+ * Update software version and Azure connect UTC time device twins on first connection
+ **********************************************************************************************************/
+
 /// <summary>
 /// Restart the Device
 /// </summary>
@@ -294,41 +315,17 @@ static DX_DIRECT_METHOD_RESPONSE_CODE hvac_restart_handler(JSON_Value *json, DX_
     }
 }
 
-// Direct method name = HvacOn
-static DX_DIRECT_METHOD_RESPONSE_CODE hvac_on_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
-{
-    dx_gpioOn(&gpio_operating_led);
-    return DX_METHOD_SUCCEEDED;
-}
-
-// Direct method name =HvacOff
-static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
-{
-    dx_gpioOff(&gpio_operating_led);
-    return DX_METHOD_SUCCEEDED;
-}
-
-/***********************************************************************************************************
- * PRODUCTION
- *
- * Software version and Azure connect UTC time device twins updated
- **********************************************************************************************************/
-
 /// <summary>
-/// Called when the Azure connection status changes. First time will update HVAC SW version and startup UTC time
+/// Called when the Azure connection status changes then unregisters this callback
 /// </summary>
 /// <param name="connected"></param>
 static void hvac_startup_report(bool connected)
 {
-    static bool first_time_only = true;
+    snprintf(msgBuffer, sizeof(msgBuffer), "Sample version: %s, DevX version: %s", SAMPLE_VERSION_NUMBER, AZURE_SPHERE_DEVX_VERSION);
+    dx_deviceTwinReportValue(&dt_hvac_sw_version, msgBuffer);                                  // DX_TYPE_STRING
+    dx_deviceTwinReportValue(&dt_utc_startup, dx_getCurrentUtc(msgBuffer, sizeof(msgBuffer))); // DX_TYPE_STRING
 
-    if (first_time_only && connected)
-    {
-        first_time_only = false;
-        snprintf(msgBuffer, sizeof(msgBuffer), "Sample version: %s, DevX version: %s", SAMPLE_VERSION_NUMBER, AZURE_SPHERE_DEVX_VERSION);
-        dx_deviceTwinReportValue(&dt_hvac_sw_version, msgBuffer);                                  // DX_TYPE_STRING
-        dx_deviceTwinReportValue(&dt_utc_startup, dx_getCurrentUtc(msgBuffer, sizeof(msgBuffer))); // DX_TYPE_STRING
-    }
+    dx_azureUnregisterConnectionChangedNotification(hvac_startup_report);
 }
 
 /***********************************************************************************************************

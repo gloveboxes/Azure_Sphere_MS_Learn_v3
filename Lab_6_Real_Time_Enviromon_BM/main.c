@@ -26,7 +26,7 @@
  *
  *   Follow these steps:
  *
- *	   1. Open CMakeLists.txt.
+ *	   1. Open azsphere_board.txt.
  *	   2. Uncomment the set command that matches your developer board.
  *	   3. Click File, then Save to save the CMakeLists.txt file which will auto generate the CMake Cache.
  *

@@ -75,11 +75,11 @@ INTERCORE_BLOCK environment_control_block;
 enum LEDS { RED, GREEN, BLUE };
 
 typedef struct {
-	int last_temperature;
-	int target_temperature;
-	bool target_temperature_set;
-	int previous_led;
-	int current_led;
+    int last_temperature;
+    int target_temperature;
+    bool target_temperature_set;
+    int previous_led;
+    int current_led;
 } HVAC_MODE;
 
 HVAC_MODE hvac_mode;
@@ -113,156 +113,156 @@ void timer_scheduler(ULONG input);
 
 
 int main() {
-	tx_kernel_enter(); // Enter the Azure RTOS kernel.
+    tx_kernel_enter(); // Enter the Azure RTOS kernel.
 }
 
 // Define what the initial system looks like.
 void tx_application_define(void* first_unused_memory) {
-	CHAR* pointer;
-	UINT status = TX_SUCCESS;
+    CHAR* pointer;
+    UINT status = TX_SUCCESS;
 
-	/* Create a byte memory pool from which to allocate the thread stacks.  */
-	tx_byte_pool_create(&byte_pool_0, "byte pool 0", memory_area, DEMO_BYTE_POOL_SIZE);
+    /* Create a byte memory pool from which to allocate the thread stacks.  */
+    tx_byte_pool_create(&byte_pool_0, "byte pool 0", memory_area, DEMO_BYTE_POOL_SIZE);
 
-	// create event flags
-	status = tx_event_flags_create(&hardware_event_flags_0, "Hardware Event");                   // Hardware events fire every 5 ms
-	if (status != TX_SUCCESS) {
-		printf("failed to create hardware_event_flags\r\n");
-	}
+    // create event flags
+    status = tx_event_flags_create(&hardware_event_flags_0, "Hardware Event");                   // Hardware events fire every 5 ms
+    if (status != TX_SUCCESS) {
+        printf("failed to create hardware_event_flags\r\n");
+    }
 
-	status = tx_event_flags_create(&Intercore_event_flags_0, "Intercore Event");                     // Intercore events fire every 10 ms
-	if (status != TX_SUCCESS) {
-		printf("failed to create Intercore_event_flags\r\n");
-	}
+    status = tx_event_flags_create(&Intercore_event_flags_0, "Intercore Event");                     // Intercore events fire every 10 ms
+    if (status != TX_SUCCESS) {
+        printf("failed to create Intercore_event_flags\r\n");
+    }
 
-	/* Allocate the stack for thread 0.  */
-	tx_byte_allocate(&byte_pool_0, (VOID**)&pointer, DEMO_STACK_SIZE, TX_NO_WAIT);
-	/* Create the main thread.  */
-	tx_thread_create(&tx_hardware_Thread, "read sensor thread", read_sensor_thread, 0,
-		pointer, DEMO_STACK_SIZE, 1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
+    /* Allocate the stack for thread 0.  */
+    tx_byte_allocate(&byte_pool_0, (VOID**)&pointer, DEMO_STACK_SIZE, TX_NO_WAIT);
+    /* Create the main thread.  */
+    tx_thread_create(&tx_hardware_Thread, "read sensor thread", read_sensor_thread, 0,
+        pointer, DEMO_STACK_SIZE, 1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
 
-	tx_byte_allocate(&byte_pool_0, (VOID**)&pointer, DEMO_STACK_SIZE, TX_NO_WAIT);
-	/* Create the intercore msg thread.  */
-	tx_thread_create(&tx_Intercore_Thread, "Intercore Thread", intercore_thread, 0,
-		pointer, DEMO_STACK_SIZE, 4, 4, TX_NO_TIME_SLICE, TX_AUTO_START);
+    tx_byte_allocate(&byte_pool_0, (VOID**)&pointer, DEMO_STACK_SIZE, TX_NO_WAIT);
+    /* Create the intercore msg thread.  */
+    tx_thread_create(&tx_Intercore_Thread, "Intercore Thread", intercore_thread, 0,
+        pointer, DEMO_STACK_SIZE, 4, 4, TX_NO_TIME_SLICE, TX_AUTO_START);
 
-	tx_byte_allocate(&byte_pool_0, (VOID**)&pointer, DEMO_STACK_SIZE, TX_NO_WAIT);
-	// Create a hardware init thread.
-	tx_thread_create(&tx_hardware_init_thread, "hardware init thread", hardware_init_thread, 0,
-		pointer, DEMO_STACK_SIZE, 1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
+    tx_byte_allocate(&byte_pool_0, (VOID**)&pointer, DEMO_STACK_SIZE, TX_NO_WAIT);
+    // Create a hardware init thread.
+    tx_thread_create(&tx_hardware_init_thread, "hardware init thread", hardware_init_thread, 0,
+        pointer, DEMO_STACK_SIZE, 1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
 }
 
 // https://embeddedartistry.com/blog/2017/02/17/implementing-malloc-with-threadx/
 // overrides for malloc and free required for srand and rand
 void* malloc(size_t size) {
-	void* ptr = NULL;
+    void* ptr = NULL;
 
-	if (size > 0) {
-		// We simply wrap the threadX call into a standard form
-		uint8_t r = tx_byte_allocate(&byte_pool_0, &ptr, size, TX_WAIT_FOREVER);
+    if (size > 0) {
+        // We simply wrap the threadX call into a standard form
+        uint8_t r = tx_byte_allocate(&byte_pool_0, &ptr, size, TX_WAIT_FOREVER);
 
-		if (r != TX_SUCCESS) {
-			ptr = NULL;
-		}
-	}
-	//else NULL if there was no size
+        if (r != TX_SUCCESS) {
+            ptr = NULL;
+        }
+    }
+    //else NULL if there was no size
 
-	return ptr;
+    return ptr;
 }
 
 void free(void* ptr) {
-	if (ptr) {
-		//We simply wrap the threadX call into a standard form
-		tx_byte_release(ptr);
-	}
+    if (ptr) {
+        //We simply wrap the threadX call into a standard form
+        tx_byte_release(ptr);
+    }
 }
 
 // initialize hardware here.
 #if defined(OEM_AVNET)
 bool initialize_hardware(void) {
-	bool status = (lp_imu_initialize());
-	tx_thread_sleep(MS_TO_TICK(100));
+    bool status = (lp_imu_initialize());
+    tx_thread_sleep(MS_TO_TICK(100));
 
-	if (status) {
-		// Prime the temperature and humidity sensors
-		// Observed the first few readings on startup may return NaN
-		for (size_t i = 0; i < 6; i++) {
-			if (!isnan(lp_get_temperature_lps22h()) && !isnan(lp_get_pressure())) {
-				break;
-			}
-			tx_thread_sleep(MS_TO_TICK(100));
-		}
+    if (status) {
+        // Prime the temperature and humidity sensors
+        // Observed the first few readings on startup may return NaN
+        for (size_t i = 0; i < 6; i++) {
+            if (!isnan(lp_get_temperature_lps22h()) && !isnan(lp_get_pressure())) {
+                break;
+            }
+            tx_thread_sleep(MS_TO_TICK(100));
+        }
 
-		environment_control_block.temperature = round(lp_get_temperature_lps22h());
-		environment_control_block.pressure = round(lp_get_pressure());
-	}
+        environment_control_block.temperature = round(lp_get_temperature_lps22h());
+        environment_control_block.pressure = round(lp_get_pressure());
+    }
 
-	// Open the red, green, and blue gpio ledRgb
-	for (size_t i = 0; i < 3; i++) {
-		mtk_os_hal_gpio_set_direction(ledRgb[i], OS_HAL_GPIO_DIR_OUTPUT);
-		mtk_os_hal_gpio_set_output(ledRgb[i], true);
-	}
+    // Open the red, green, and blue gpio ledRgb
+    for (size_t i = 0; i < 3; i++) {
+        mtk_os_hal_gpio_set_direction(ledRgb[i], OS_HAL_GPIO_DIR_OUTPUT);
+        mtk_os_hal_gpio_set_output(ledRgb[i], true);
+    }
 
 
-	return status;
+    return status;
 }
 #else
 bool initialize_hardware(void) {
-	environment_control_block.temperature = 20;
-	environment_control_block.pressure = 1000;
+    environment_control_block.temperature = 20;
+    environment_control_block.pressure = 1000;
 
 #ifdef OEM_SEEED_STUDIO_MINI
-	// Open the red, green, and blue gpio ledRgb
-	for (size_t i = 0; i < 3; i++) {
-		mtk_os_hal_gpio_set_direction(ledRgb[i], OS_HAL_GPIO_DIR_OUTPUT);
-		mtk_os_hal_gpio_set_output(ledRgb[i], false);
-	}
+    // Open the red, green, and blue gpio ledRgb
+    for (size_t i = 0; i < 3; i++) {
+        mtk_os_hal_gpio_set_direction(ledRgb[i], OS_HAL_GPIO_DIR_OUTPUT);
+        mtk_os_hal_gpio_set_output(ledRgb[i], false);
+    }
 #else
-	// Open the red, green, and blue gpio ledRgb
-	for (size_t i = 0; i < 3; i++) {
-		mtk_os_hal_gpio_set_direction(ledRgb[i], OS_HAL_GPIO_DIR_OUTPUT);
-		mtk_os_hal_gpio_set_output(ledRgb[i], true);
-	}
+    // Open the red, green, and blue gpio ledRgb
+    for (size_t i = 0; i < 3; i++) {
+        mtk_os_hal_gpio_set_direction(ledRgb[i], OS_HAL_GPIO_DIR_OUTPUT);
+        mtk_os_hal_gpio_set_output(ledRgb[i], true);
+    }
 #endif
 
-	return true;
+    return true;
 }
 #endif
 
 
 // Using default threadX 10ms tick period
 void timer_scheduler(ULONG input) {
-	static size_t intercoreTickCounter = 0;
-	static size_t readSensorTickCounter = SIZE_MAX;
-	ULONG status = TX_SUCCESS;
+    static size_t intercoreTickCounter = 0;
+    static size_t readSensorTickCounter = SIZE_MAX;
+    ULONG status = TX_SUCCESS;
 
-	if (hardwareInitOK == true) {
-		readSensorTickCounter++;
-		if (readSensorTickCounter >= sensorSampleRateInSeconds) {
-			readSensorTickCounter = 0;
-			status = tx_event_flags_set(&hardware_event_flags_0, 0x1, TX_OR);
-			if (status != TX_SUCCESS) {
-				printf("failed to set hardware event flags\r\n");
-			}
-		}
+    if (hardwareInitOK == true) {
+        readSensorTickCounter++;
+        if (readSensorTickCounter >= sensorSampleRateInSeconds) {
+            readSensorTickCounter = 0;
+            status = tx_event_flags_set(&hardware_event_flags_0, 0x1, TX_OR);
+            if (status != TX_SUCCESS) {
+                printf("failed to set hardware event flags\r\n");
+            }
+        }
 
-		intercoreTickCounter++;
-		if (intercoreTickCounter >= 25)  // 250ms = 0.25 seconds.
-		{
-			intercoreTickCounter = 0;
-			status = tx_event_flags_set(&Intercore_event_flags_0, 0x1, TX_OR);
-			if (status != TX_SUCCESS) {
-				printf("failed to set Intercore event flags\r\n");
-			}
-		}
-	}
+        intercoreTickCounter++;
+        if (intercoreTickCounter >= 25)  // 250ms = 0.25 seconds.
+        {
+            intercoreTickCounter = 0;
+            status = tx_event_flags_set(&Intercore_event_flags_0, 0x1, TX_OR);
+            if (status != TX_SUCCESS) {
+                printf("failed to set Intercore event flags\r\n");
+            }
+        }
+    }
 }
 
 void send_intercore_msg(void) {
-	memcpy((void*)&buf[payloadStart], (void*)&environment_control_block, sizeof(environment_control_block));
-	dataSize = payloadStart + sizeof(environment_control_block);
+    memcpy((void*)&buf[payloadStart], (void*)&environment_control_block, sizeof(environment_control_block));
+    dataSize = payloadStart + sizeof(environment_control_block);
 
-	EnqueueData(inbound, outbound, sharedBufSize, buf, dataSize);
+    EnqueueData(inbound, outbound, sharedBufSize, buf, dataSize);
 }
 
 /*************************************************************************************************************************************
@@ -272,48 +272,48 @@ void send_intercore_msg(void) {
 * Update to match your requirements
 *************************************************************************************************************************************/
 void intercore_thread(ULONG thread_input) {
-	UINT status = TX_SUCCESS;
-	ULONG actual_flags;
-	bool queuedMessages = true;
+    UINT status = TX_SUCCESS;
+    ULONG actual_flags;
+    bool queuedMessages = true;
 
-	if (GetIntercoreBuffers(&outbound, &inbound, &sharedBufSize) == -1) {
-		return; // kill the thread
-	}
+    if (GetIntercoreBuffers(&outbound, &inbound, &sharedBufSize) == -1) {
+        return; // kill the thread
+    }
 
-	while (true) {
-		status = tx_event_flags_get(&Intercore_event_flags_0, 0x1, TX_OR_CLEAR, &actual_flags, TX_WAIT_FOREVER);
+    while (true) {
+        status = tx_event_flags_get(&Intercore_event_flags_0, 0x1, TX_OR_CLEAR, &actual_flags, TX_WAIT_FOREVER);
 
-		if ((status != TX_SUCCESS) || (actual_flags != 0x1)) { break; }
+        if ((status != TX_SUCCESS) || (actual_flags != 0x1)) { break; }
 
-		queuedMessages = true;
+        queuedMessages = true;
 
-		while (queuedMessages) {
+        while (queuedMessages) {
 
-			dataSize = sizeof(buf);
+            dataSize = sizeof(buf);
 
-			int r = DequeueData(outbound, inbound, sharedBufSize, buf, &dataSize);
+            int r = DequeueData(outbound, inbound, sharedBufSize, buf, &dataSize);
 
-			if (r == 0 && dataSize > payloadStart) {
-				memcpy((void*)&ic_control_block, (void*)&buf[payloadStart], sizeof(ic_control_block));
+            if (r == 0 && dataSize > payloadStart) {
+                memcpy((void*)&ic_control_block, (void*)&buf[payloadStart], sizeof(ic_control_block));
 
-				switch (ic_control_block.cmd) {
-				case IC_READ_SENSOR:
-					send_intercore_msg();
-					break;
-				case IC_TARGET_TEMPERATURE:
-					hvac_mode.target_temperature_set = true;
-					hvac_mode.target_temperature = ic_control_block.temperature;
-					set_hvac_operating_mode(hvac_mode.last_temperature);
-					break;
-				default:
-					break;
-				}
-			}
-			else {
-				queuedMessages = false;
-			}
-		}
-	}
+                switch (ic_control_block.cmd) {
+                case IC_READ_SENSOR:
+                    send_intercore_msg();
+                    break;
+                case IC_TARGET_TEMPERATURE:
+                    hvac_mode.target_temperature_set = true;
+                    hvac_mode.target_temperature = ic_control_block.temperature;
+                    set_hvac_operating_mode(hvac_mode.last_temperature);
+                    break;
+                default:
+                    break;
+                }
+            }
+            else {
+                queuedMessages = false;
+            }
+        }
+    }
 }
 
 /// <summary>
@@ -324,111 +324,111 @@ void intercore_thread(ULONG thread_input) {
 /// </summary>
 void set_hvac_operating_mode(int temperature) {
 
-	if (!hvac_mode.target_temperature_set) { return; }
+    if (!hvac_mode.target_temperature_set) { return; }
 
-	hvac_mode.current_led = temperature == hvac_mode.target_temperature ? HVAC_MODE_GREEN
-		: temperature > hvac_mode.target_temperature ? HVAC_MODE_COOLING
-		: HVAC_MODE_HEATING;
+    hvac_mode.current_led = temperature == hvac_mode.target_temperature ? HVAC_MODE_GREEN
+        : temperature > hvac_mode.target_temperature ? HVAC_MODE_COOLING
+        : HVAC_MODE_HEATING;
 
-	if (hvac_mode.previous_led != hvac_mode.current_led) {
-		// minus one as first item is HVAC_MODE_UNKNOWN
+    if (hvac_mode.previous_led != hvac_mode.current_led) {
+        // minus one as first item is HVAC_MODE_UNKNOWN
 #ifdef OEM_SEEED_STUDIO_MINI
-		mtk_os_hal_gpio_set_output(ledRgb[hvac_mode.previous_led - 1], false);
+        mtk_os_hal_gpio_set_output(ledRgb[hvac_mode.previous_led - 1], false);
 #else
-		mtk_os_hal_gpio_set_output(ledRgb[hvac_mode.previous_led - 1], true);
+        mtk_os_hal_gpio_set_output(ledRgb[hvac_mode.previous_led - 1], true);
 #endif
-		hvac_mode.previous_led = hvac_mode.current_led;
-	}
+        hvac_mode.previous_led = hvac_mode.current_led;
+    }
 
-	environment_control_block.operating_mode = hvac_mode.current_led;
+    environment_control_block.operating_mode = hvac_mode.current_led;
 #ifdef OEM_SEEED_STUDIO_MINI
-	// minus one as first item is HVAC_MODE_UNKNOWN
-	mtk_os_hal_gpio_set_output(ledRgb[hvac_mode.current_led - 1], true);
+    // minus one as first item is HVAC_MODE_UNKNOWN
+    mtk_os_hal_gpio_set_output(ledRgb[hvac_mode.current_led - 1], true);
 #else
-	// minus one as first item is HVAC_MODE_UNKNOWN
-	mtk_os_hal_gpio_set_output(ledRgb[hvac_mode.current_led - 1], false);
+    // minus one as first item is HVAC_MODE_UNKNOWN
+    mtk_os_hal_gpio_set_output(ledRgb[hvac_mode.current_led - 1], false);
 #endif
 }
 
 // sensor read
 #if defined(OEM_AVNET)
 void read_sensor_thread(ULONG thread_input) {
-	ULONG actual_flags;
-	int rand_number;
-	UINT status;
+    ULONG actual_flags;
+    int rand_number;
+    UINT status;
 
-	srand((unsigned int)time(NULL)); // seed the random number generator for fake telemetry
+    srand((unsigned int)time(NULL)); // seed the random number generator for fake telemetry
 
-	while (true) {
-		status = tx_event_flags_get(&hardware_event_flags_0, 0x1, TX_OR_CLEAR, &actual_flags, TX_WAIT_FOREVER);
+    while (true) {
+        status = tx_event_flags_get(&hardware_event_flags_0, 0x1, TX_OR_CLEAR, &actual_flags, TX_WAIT_FOREVER);
 
-		if ((status != TX_SUCCESS) || (actual_flags != 0x1)) { break; }
+        if ((status != TX_SUCCESS) || (actual_flags != 0x1)) { break; }
 
-		environment_control_block.cmd = IC_READ_SENSOR;
+        environment_control_block.cmd = IC_READ_SENSOR;
 
-		environment_control_block.temperature = (int)lp_get_temperature_lps22h();
-		environment_control_block.pressure = (int)lp_get_pressure();
+        environment_control_block.temperature = (int)lp_get_temperature_lps22h();
+        environment_control_block.pressure = (int)lp_get_pressure();
 
-		rand_number = rand() % 20;
-		environment_control_block.humidity = 40 + rand_number;
+        rand_number = rand() % 20;
+        environment_control_block.humidity = 40 + rand_number;
 
-		hvac_mode.last_temperature = environment_control_block.temperature;
+        hvac_mode.last_temperature = environment_control_block.temperature;
 
-		set_hvac_operating_mode(environment_control_block.temperature);
-	}
+        set_hvac_operating_mode(environment_control_block.temperature);
+    }
 }
 #else
 void read_sensor_thread(ULONG thread_input) {
-	ULONG actual_flags;
-	int rand_number;
-	UINT status;
+    ULONG actual_flags;
+    int rand_number;
+    UINT status;
 
-	srand((unsigned int)time(NULL)); // seed the random number generator for fake telemetry
+    srand((unsigned int)time(NULL)); // seed the random number generator for fake telemetry
 
-	while (true) {
-		// waits here until flag set in inter core thread
-		status = tx_event_flags_get(&hardware_event_flags_0, 0x1, TX_OR_CLEAR, &actual_flags, TX_WAIT_FOREVER);
+    while (true) {
+        // waits here until flag set in inter core thread
+        status = tx_event_flags_get(&hardware_event_flags_0, 0x1, TX_OR_CLEAR, &actual_flags, TX_WAIT_FOREVER);
 
-		if ((status != TX_SUCCESS) || (actual_flags != 0x1)) { break; }
+        if ((status != TX_SUCCESS) || (actual_flags != 0x1)) { break; }
 
-		environment_control_block.cmd = IC_READ_SENSOR;
+        environment_control_block.cmd = IC_READ_SENSOR;
 
-		rand_number = (rand() % 10);
-		environment_control_block.temperature = 15 + rand_number;
+        rand_number = (rand() % 10);
+        environment_control_block.temperature = 15 + rand_number;
 
-		rand_number = (rand() % 100);
-		environment_control_block.pressure = 950 + rand_number;
+        rand_number = (rand() % 100);
+        environment_control_block.pressure = 950 + rand_number;
 
-		rand_number = (rand() % 20);
-		environment_control_block.humidity = 40 + rand_number;
+        rand_number = (rand() % 20);
+        environment_control_block.humidity = 40 + rand_number;
 
-		hvac_mode.last_temperature = environment_control_block.temperature;
+        hvac_mode.last_temperature = environment_control_block.temperature;
 
-		set_hvac_operating_mode(environment_control_block.temperature);
-	}
+        set_hvac_operating_mode(environment_control_block.temperature);
+    }
 }
 #endif
 
 
 // only purpose in life is to initialize the hardware.
 void hardware_init_thread(ULONG thread_input) {
-	// printf("Hardware Init Thread - start: %u\r\n", millis());
-	UINT status = TX_SUCCESS;
+    // printf("Hardware Init Thread - start: %u\r\n", millis());
+    UINT status = TX_SUCCESS;
 
-	// Initialize the hardware
-	// hardwareInitOK = initialize_hardware();
+    // Initialize the hardware
+    // hardwareInitOK = initialize_hardware();
 
-	if (initialize_hardware()) {
-		// start the timer.
-		hardwareInitOK = true;
-		status = tx_timer_create(&msTimer, "10ms Timer", timer_scheduler, 0, 1, 1, TX_AUTO_ACTIVATE);
-		if (status != TX_SUCCESS) {
-			printf("failed to create timer\r\n");
-		}
-		else {
-			printf("timer created ok\r\n");
-		}
-	}
+    if (initialize_hardware()) {
+        // start the timer.
+        hardwareInitOK = true;
+        status = tx_timer_create(&msTimer, "10ms Timer", timer_scheduler, 0, 1, 1, TX_AUTO_ACTIVATE);
+        if (status != TX_SUCCESS) {
+            printf("failed to create timer\r\n");
+        }
+        else {
+            printf("timer created ok\r\n");
+        }
+    }
 
-	printf("Hardware Init - %s\r\n", hardwareInitOK ? "OK" : "FAIL");
+    printf("Hardware Init - %s\r\n", hardwareInitOK ? "OK" : "FAIL");
 }

@@ -18,7 +18,7 @@ project(${ProjectId} C)
 if (EXISTS "${PARENT_DIR}/azsphere_board.txt")
     include("${PARENT_DIR}/azsphere_board.txt")
 else()
-    include(cmake/azsphere_board.cmake)
+    include(azsphere_board.txt)
 endif()
 
 # Azure Sphere TOOLS_REVISION and TARGET_API_SET set in cmake/azsphere_config.cmake

@@ -10,7 +10,7 @@ SET(CMAKE_ASM_FLAGS "-mcpu=cortex-m4")
 if (EXISTS "${PARENT_DIR}/azsphere_board.txt")
     include("${PARENT_DIR}/azsphere_board.txt")
 else()
-    include(cmake/azsphere_board.cmake)
+    include(azsphere_board.txt)
 endif()
 
 function(azsphere_config)

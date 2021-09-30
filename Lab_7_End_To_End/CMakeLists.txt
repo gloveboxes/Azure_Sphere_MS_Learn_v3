@@ -16,7 +16,7 @@ get_filename_component(PARENT_DIR ${PROJECT_SOURCE_DIR} DIRECTORY)
 if (EXISTS "${PARENT_DIR}/azsphere_board.txt")
     include("${PARENT_DIR}/azsphere_board.txt")
 else()
-    include(cmake/azsphere_board.cmake)
+    include(azsphere_board.txt)
 endif()
 
 if (EXISTS "${PARENT_DIR}/Tools/cmake/azsphere_config.cmake")

@@ -169,7 +169,7 @@ static DX_DIRECT_METHOD_RESPONSE_CODE hvac_restart_handler(JSON_Value *json, DX_
 
     // leave enough time for the device twin dt_reportedRestartUtc
     // to update before restarting the device
-    if (seconds > 2 && seconds < 10)
+    if (IN_RANGE(seconds, 3, 10))
     {
         // Create Direct Method Response
         snprintf(*responseMsg, responseLen, "%s called. Restart in %d seconds", directMethodBinding->methodName, seconds);

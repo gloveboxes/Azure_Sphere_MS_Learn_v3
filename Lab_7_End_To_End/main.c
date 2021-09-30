@@ -114,14 +114,14 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
             DX_JSON_INT, "TotalMemoryKiB", (int)Applications_GetTotalMemoryUsageInKB()))
         // clang-format on
         {
-            Log_Debug("%s\n", msgBuffer);
+            dx_Log_Debug("%s\n", msgBuffer);
 
             // Publish telemetry message to IoT Hub/Central
             dx_azurePublish(msgBuffer, strlen(msgBuffer), messageProperties, NELEMS(messageProperties), &contentProperties);
         }
         else
         {
-            Log_Debug("JSON Serialization failed: Buffer too small\n");
+            dx_Log_Debug("JSON Serialization failed: Buffer too small\n");
             dx_terminate(APP_ExitCode_Telemetry_Buffer_Too_Small);
         }
     }
@@ -220,13 +220,13 @@ static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBindi
     if (strlen(panel_message) < sizeof(display_panel_message) && dx_isStringPrintable(panel_message))
     {
         strncpy(display_panel_message, panel_message, sizeof(display_panel_message));
-        Log_Debug("Virtual HVAC Display Panel Message: %s\n", display_panel_message);
+        dx_Log_Debug("Virtual HVAC Display Panel Message: %s\n", display_panel_message);
         // IoT Plug and Play acknowledge completed
         dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_COMPLETED);
     }
     else
     {
-        Log_Debug("Local copy failed. String too long or invalid data\n");
+        dx_Log_Debug("Local copy failed. String too long or invalid data\n");
         // IoT Plug and Play acknowledge error
         dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_ERROR);
     }
@@ -358,7 +358,7 @@ void start_watchdog(void)
     {
         if (timer_settime(watchdogTimer, 0, &watchdogInterval, NULL) == -1)
         {
-            Log_Debug("Issue setting watchdog timer. %s %d\n", strerror(errno), errno);
+            dx_Log_Debug("Issue setting watchdog timer. %s %d\n", strerror(errno), errno);
         }
     }
 }
@@ -430,6 +430,6 @@ int main(int argc, char *argv[])
     }
 
     ClosePeripheralsAndHandlers();
-    Log_Debug("Application exiting.\n");
+    dx_Log_Debug("Application exiting.\n");
     return dx_getTerminationExitCode();
 }

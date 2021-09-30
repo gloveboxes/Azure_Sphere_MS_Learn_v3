@@ -68,14 +68,14 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
 			DX_JSON_INT, "TotalMemoryKiB", (int)Applications_GetTotalMemoryUsageInKB()))
         // clang-format on
         {
-            Log_Debug("%s\n", msgBuffer);
+            dx_Log_Debug("%s\n", msgBuffer);
 
             // Publish telemetry message to IoT Hub/Central
             dx_azurePublish(msgBuffer, strlen(msgBuffer), messageProperties, NELEMS(messageProperties), &contentProperties);
         }
         else
         {
-            Log_Debug("JSON Serialization failed: Buffer too small\n");
+            dx_Log_Debug("JSON Serialization failed: Buffer too small\n");
             dx_terminate(APP_ExitCode_Telemetry_Buffer_Too_Small);
         }
     }
@@ -266,6 +266,6 @@ int main(int argc, char *argv[])
     }
 
     ClosePeripheralsAndHandlers();
-    Log_Debug("Application exiting.\n");
+    dx_Log_Debug("Application exiting.\n");
     return dx_getTerminationExitCode();
 }

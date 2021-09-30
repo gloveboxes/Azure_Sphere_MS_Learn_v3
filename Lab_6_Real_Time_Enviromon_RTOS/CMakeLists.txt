@@ -2,10 +2,13 @@
 #  Licensed under the MIT License.
 
 cmake_minimum_required (VERSION 3.11)
-#set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
-project (demo_threadx C ASM)
 
-SET(CMAKE_ASM_FLAGS "-mcpu=cortex-m4")
+# Generate project id from the folder name
+get_filename_component(ProjectId ${CMAKE_CURRENT_LIST_DIR} NAME)
+string(REPLACE " " "_" ProjectId ${ProjectId})
+string(TOLOWER ${ProjectId} ProjectId)
+
+project (${ProjectId} C ASM)
 
 if (EXISTS "${PARENT_DIR}/azsphere_board.txt")
     include("${PARENT_DIR}/azsphere_board.txt")
@@ -13,14 +16,21 @@ else()
     include(azsphere_board.txt)
 endif()
 
-function(azsphere_config)
-    # Generate the Azure Sphere tools version from the azsphere show-version SDK tool
-    execute_process(COMMAND azsphere show-version OUTPUT_VARIABLE SDK_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
-    message(STATUS "Azure Sphere SDK Version: ${SDK_VERSION}")
-    azsphere_configure_tools(TOOLS_REVISION ${SDK_VERSION})
-endfunction()
+# Check if there is a global azsphere_board.cmake file
+get_filename_component(PARENT_DIR ${PROJECT_SOURCE_DIR} DIRECTORY)
+if (EXISTS "${PARENT_DIR}/Tools/cmake/azsphere_config.cmake")
+    include(../Tools/cmake/azsphere_config.cmake)
+    auto_generate_tools_revision()
+else()
 
-azsphere_config()
+    # For information on setting tools revision and target api set see 
+    # https://docs.microsoft.com/en-us/azure-sphere/app-development/using-cmake-functions
+
+    azsphere_configure_tools(TOOLS_REVISION "21.07")
+
+endif()
+
+SET(CMAKE_ASM_FLAGS "-mcpu=cortex-m4")
 
 add_compile_definitions(OSAI_AZURE_RTOS)
 
@@ -74,9 +84,6 @@ target_link_libraries(${PROJECT_NAME} MT3620_M4_Driver azrtos::threadx)
 target_link_libraries(${PROJECT_NAME} m)
 
 set_target_properties (${PROJECT_NAME} PROPERTIES LINK_DEPENDS ${PROJECT_SOURCE_DIR}/linker.ld)
-
-# Add MakeImage post-build command
-# include ("${AZURE_SPHERE_MAKE_IMAGE_FILE}")
 
 set(BOARD_COUNTER 0)
 

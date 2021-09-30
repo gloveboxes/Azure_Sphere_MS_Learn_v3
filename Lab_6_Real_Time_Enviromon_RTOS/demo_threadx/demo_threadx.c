@@ -342,7 +342,7 @@ void set_hvac_operating_mode(int temperature) {
 
 	environment_control_block.operating_mode = hvac_mode.current_led;
 #ifdef OEM_SEEED_STUDIO_MINI
-		// minus one as first item is HVAC_MODE_UNKNOWN
+	// minus one as first item is HVAC_MODE_UNKNOWN
 	mtk_os_hal_gpio_set_output(ledRgb[hvac_mode.current_led - 1], true);
 #else
 	// minus one as first item is HVAC_MODE_UNKNOWN

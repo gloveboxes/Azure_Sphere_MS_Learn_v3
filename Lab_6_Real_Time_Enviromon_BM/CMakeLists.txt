@@ -21,8 +21,19 @@ else()
     include(azsphere_board.txt)
 endif()
 
-# Azure Sphere TOOLS_REVISION and TARGET_API_SET set in cmake/azsphere_config.cmake
-include(cmake/azsphere_config.cmake)
+# Check if there is a global azsphere_board.cmake file
+get_filename_component(PARENT_DIR ${PROJECT_SOURCE_DIR} DIRECTORY)
+if (EXISTS "${PARENT_DIR}/Tools/cmake/azsphere_config.cmake")
+    include(../Tools/cmake/azsphere_config.cmake)
+    auto_generate_tools_revision()
+else()
+
+    # For information on setting tools revision and target api set see 
+    # https://docs.microsoft.com/en-us/azure-sphere/app-development/using-cmake-functions
+
+    azsphere_configure_tools(TOOLS_REVISION "21.07")
+
+endif()
 
 add_compile_definitions(OSAI_BARE_METAL)
 add_compile_definitions(OSAI_ENABLE_DMA)
@@ -58,8 +69,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
                 ../IntercoreContract
                 ./)     
 
-
-                           
 # Libraries
 add_subdirectory(mt3620_m4_software/MT3620_M4_Driver ./lib/MT3620_M4_Driver)
 target_link_libraries(${PROJECT_NAME} MT3620_M4_Driver)
@@ -67,24 +76,38 @@ target_link_libraries(${PROJECT_NAME} MT3620_M4_Driver)
 # Linker, Image
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_DEPENDS ${CMAKE_SOURCE_DIR}/linker.ld)
 
+set(BOARD_COUNTER 0)
+
 if(AVNET)
-    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/avnet_mt3620_sk" TARGET_DEFINITION "azure_sphere_learning_path.json")
+    MATH(EXPR BOARD_COUNTER "${BOARD_COUNTER}+1")
     add_definitions( -DOEM_AVNET=TRUE )
+    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/avnet_mt3620_sk" TARGET_DEFINITION "azure_sphere_learning_path.json")
 endif(AVNET)
 
 if(AVNET_REV_2)
-    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/avnet_mt3620_sk_rev2" TARGET_DEFINITION "azure_sphere_learning_path.json")
+    MATH(EXPR BOARD_COUNTER "${BOARD_COUNTER}+1")
     add_definitions( -DOEM_AVNET=TRUE )
+    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/avnet_mt3620_sk_rev2" TARGET_DEFINITION "azure_sphere_learning_path.json")
 endif(AVNET_REV_2)
 
 if (SEEED_STUDIO_RDB)
-    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/mt3620_rdb" TARGET_DEFINITION "azure_sphere_learning_path.json")
+    MATH(EXPR BOARD_COUNTER "${BOARD_COUNTER}+1")
     add_definitions( -DOEM_SEEED_STUDIO=TRUE )
+    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/mt3620_rdb" TARGET_DEFINITION "azure_sphere_learning_path.json")
 endif()
 
 if (SEEED_STUDIO_MINI)
-    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/seeed_mt3620_mdb" TARGET_DEFINITION "azure_sphere_learning_path.json")
+    MATH(EXPR BOARD_COUNTER "${BOARD_COUNTER}+1")
     add_definitions( -DOEM_SEEED_STUDIO_MINI=TRUE )    
+    azsphere_target_hardware_definition(${PROJECT_NAME} TARGET_DIRECTORY "HardwareDefinitions/seeed_mt3620_mdb" TARGET_DEFINITION "azure_sphere_learning_path.json")
 endif(SEEED_STUDIO_MINI)
+
+if(BOARD_COUNTER EQUAL 0)
+    message(FATAL_ERROR "No Azure Sphere boards selected. Ensure one board set")
+endif()
+
+if(BOARD_COUNTER GREATER 1)
+    message(FATAL_ERROR "Multiple (${BOARD_COUNTER}) Azure Sphere boards selected. Ensure only one board set")
+endif()
 
 azsphere_target_add_image_package(${PROJECT_NAME})

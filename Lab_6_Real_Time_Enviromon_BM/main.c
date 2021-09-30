@@ -1,3 +1,43 @@
+/*************************************************************************************************************************************
+ * The intercore communications labs require multiple instances of VS Code to be running
+ *
+ * It is recommended to install the VS Code Peacock extension for the intercore communications labs.
+ * The Peacock extension allows you to change the color of your Visual Studio Code workspace.
+ * Ideal when you have multiple VS Code instances
+ * Install the Peacock extension from https://marketplace.visualstudio.com/items?itemName=johnpapa.vscode-peacock
+ *
+ * The following colours have been set:
+ * The VS Code instance attached to the Real-Time core will be red. Real-time is red, as in racing red.
+ * The VS Code instance attached to the High-level core is blue. High-level is blue, as in sky is high and blue.
+ * You can change the default colours to match your preferences.
+ *
+ *   DEVELOPER BOARD SELECTION
+ *
+ *   The following developer boards are supported.
+ *
+ *	   1. AVNET Azure Sphere Starter Kit.
+ *     2. AVNET Azure Sphere Starter Kit Revision 2.
+ *	   3. Seeed Studio Azure Sphere MT3620 Development Kit aka Reference Design Board or rdb.
+ *	   4. Seeed Studio Seeed Studio MT3620 Mini Dev Board.
+ *
+ *   ENABLE YOUR DEVELOPER BOARD
+ *
+ *   Each Azure Sphere developer board manufacturer maps ledRgb differently. You need to select the configuration that matches your board.
+ *
+ *   Follow these steps:
+ *
+ *	   1. Open CMakeLists.txt.
+ *	   2. Uncomment the set command that matches your developer board.
+ *	   3. Click File, then Save to save the CMakeLists.txt file which will auto generate the CMake Cache.
+ *
+ *
+ * Intercore messaging.
+ *
+ * There needs to be a shared understanding of the data structure being shared between the real-time and high-level apps
+ * This shared understanding is declared in the intercore_contract.h file.  This file can be found in the IntercoreContract directory.
+ *
+ *************************************************************************************************************************************/
+
 #include "intercore.h"
 #include "intercore_contract.h"
 
@@ -77,9 +117,15 @@ bool initialize_hardware(void)
     mtk_os_hal_gpio_set_direction(LED_GREEN, OS_HAL_GPIO_DIR_OUTPUT);
     mtk_os_hal_gpio_set_direction(LED_BLUE, OS_HAL_GPIO_DIR_OUTPUT);
 
+#ifdef OEM_SEEED_STUDIO_MINI
+    mtk_os_hal_gpio_set_output(LED_RED, OS_HAL_GPIO_DATA_LOW);
+    mtk_os_hal_gpio_set_output(LED_GREEN, OS_HAL_GPIO_DATA_LOW);
+    mtk_os_hal_gpio_set_output(LED_BLUE, OS_HAL_GPIO_DATA_LOW);
+#else
     mtk_os_hal_gpio_set_output(LED_RED, OS_HAL_GPIO_DATA_HIGH);
     mtk_os_hal_gpio_set_output(LED_GREEN, OS_HAL_GPIO_DATA_HIGH);
     mtk_os_hal_gpio_set_output(LED_BLUE, OS_HAL_GPIO_DATA_HIGH);
+#endif
 
 #if defined(OEM_AVNET)
 
@@ -126,9 +172,7 @@ static void send_intercore_msg(void *data, size_t length)
 /// </summary>
 void set_hvac_operating_mode(int temperature)
 {
-    if (!hvac_mode.target_temperature_set) {
-        return;
-    }
+    if (!hvac_mode.target_temperature_set) { return; }
 
     hvac_mode.current_led = temperature == hvac_mode.target_temperature  ? HVAC_MODE_GREEN
                             : temperature > hvac_mode.target_temperature ? HVAC_MODE_COOLING
@@ -136,13 +180,23 @@ void set_hvac_operating_mode(int temperature)
 
     if (hvac_mode.previous_led != hvac_mode.current_led) {
         // minus one as first item is HVAC_MODE_UNKNOWN
+#ifdef OEM_SEEED_STUDIO_MINI
+        mtk_os_hal_gpio_set_output(ledRgb[hvac_mode.previous_led - 1], false);
+#else
         mtk_os_hal_gpio_set_output(ledRgb[hvac_mode.previous_led - 1], true);
+#endif
         hvac_mode.previous_led = hvac_mode.current_led;
     }
 
     ic_outbound_data.operating_mode = hvac_mode.current_led;
+
+#ifdef OEM_SEEED_STUDIO_MINI
+    // minus one as first item is HVAC_MODE_UNKNOWN
+    mtk_os_hal_gpio_set_output(ledRgb[hvac_mode.current_led - 1], true);
+#else
     // minus one as first item is HVAC_MODE_UNKNOWN
     mtk_os_hal_gpio_set_output(ledRgb[hvac_mode.current_led - 1], false);
+#endif
 }
 
 static void process_inbound_message()

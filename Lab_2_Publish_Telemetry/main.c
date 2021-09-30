@@ -93,7 +93,7 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
         dx_terminate(DX_ExitCode_ConsumeEventLoopTimeEvent);
         return;
     }
-    onboard_sensors_read(&telemetry.latest);
+    hvac_sensors_read(&telemetry.latest);
 
     telemetry.updated = true;
 
@@ -118,7 +118,7 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
 /// </summary>
 static void InitPeripheralsAndHandlers(void)
 {
-    onboard_sensors_init();
+    hvac_sensors_init();
     dx_Log_Debug_Init(Log_Debug_Time_buffer, sizeof(Log_Debug_Time_buffer));
     dx_azureConnect(&dx_config, NETWORK_INTERFACE, IOT_PLUG_AND_PLAY_MODEL_ID);
     dx_gpioSetOpen(gpio_bindings, NELEMS(gpio_bindings));

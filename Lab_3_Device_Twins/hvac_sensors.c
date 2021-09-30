@@ -1,11 +1,11 @@
 /* Copyright (c) Microsoft Corporation. All rights reserved.
    Licensed under the MIT License. */
 
-#include "onboard_sensors.h"
+#include "hvac_sensors.h"
 
 #ifdef OEM_AVNET
 
-bool onboard_sensors_init(void) {
+bool hvac_sensors_init(void) {
     srand((unsigned int)time(NULL)); // seed the random number generator for fake telemetry
     avnet_imu_initialize(I2cMaster2);
 
@@ -18,7 +18,7 @@ bool onboard_sensors_init(void) {
 /// <summary>
 ///     Reads telemetry from Avnet onboard sensors
 /// </summary>
-bool onboard_sensors_read(SENSOR *telemetry)
+bool hvac_sensors_read(SENSOR *telemetry)
 {
     // ENSURE lp_calibrate_angular_rate(); call from lp_initializeDevKit before calling lp_get_angular_rate()
 
@@ -36,14 +36,14 @@ bool onboard_sensors_read(SENSOR *telemetry)
     return true;
 }
 
-bool onboard_sensors_close(void) {
+bool hvac_sensors_close(void) {
     return true;
 }
 
 
 #else
 
-bool onboard_sensors_init(void) {
+bool hvac_sensors_init(void) {
     srand((unsigned int)time(NULL)); // seed the random number generator for fake telemetry
     return true;
 }
@@ -51,7 +51,7 @@ bool onboard_sensors_init(void) {
 /// <summary>
 ///     Generate fake telemetry for Seeed Studi dev boards
 /// </summary>
-bool onboard_sensors_read(SENSOR *telemetry)
+bool hvac_sensors_read(SENSOR *telemetry)
 {
     int rnd = (rand() % 10) - 5;
     telemetry->temperature = 25 + rnd;
@@ -64,7 +64,7 @@ bool onboard_sensors_read(SENSOR *telemetry)
     return true;
 }
 
-bool onboard_sensors_close(void)
+bool hvac_sensors_close(void)
 {
     return true;
 }

@@ -16,7 +16,7 @@
 
 #include "hw/azure_sphere_learning_path.h" // Hardware definition
 #include "app_exit_codes.h"                // application specific exit codes
-#include "onboard_status.h"
+#include "hvac_status.h"
 
 #include "../IntercoreContract/intercore_contract.h"
 

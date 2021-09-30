@@ -1,4 +1,4 @@
-#include "onboard_status.h"
+#include "hvac_status.h"
 
 static bool azure_connected = false;
 

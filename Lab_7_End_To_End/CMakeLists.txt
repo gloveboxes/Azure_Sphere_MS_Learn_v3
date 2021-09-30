@@ -19,11 +19,21 @@ else()
     include(cmake/azsphere_board.cmake)
 endif()
 
-# Azure Sphere TOOLS_REVISION and TARGET_API_SET set in cmake/azsphere_config.cmake
-include(cmake/azsphere_config.cmake)
+if (EXISTS "${PARENT_DIR}/Tools/cmake/azsphere_config.cmake")
+    include(../Tools/cmake/azsphere_config.cmake)
+    auto_generate_azsphere_config()
+else()
+
+    # For information on setting tools revision and target api set see 
+    # https://docs.microsoft.com/en-us/azure-sphere/app-development/using-cmake-functions
+
+    azsphere_configure_tools(TOOLS_REVISION "21.07")
+    azsphere_configure_api(TARGET_API_SET "10")
+
+endif()
 
 # Create executable
-add_executable (${PROJECT_NAME} main.c onboard_status.c)
+add_executable (${PROJECT_NAME} main.c hvac_status.c)
 target_link_libraries (${PROJECT_NAME} applibs pthread gcc_s c azure_sphere_devx)
 target_include_directories(${PROJECT_NAME} PUBLIC AzureSphereDevX/include)
 

@@ -16,8 +16,8 @@
 
 #include "hw/azure_sphere_learning_path.h" // Hardware definition
 #include "app_exit_codes.h"                // application specific exit codes
-#include "onboard_sensors.h"
-#include "onboard_status.h"
+#include "hvac_sensors.h"
+#include "hvac_status.h"
 
 #include <applibs/applications.h>
 #include <applibs/log.h>

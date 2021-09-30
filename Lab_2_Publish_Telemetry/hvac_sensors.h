@@ -30,6 +30,6 @@ typedef struct {
     HVAC_OPERATING_MODE previous_operating_mode;
 } ENVIRONMENT;
 
-bool onboard_sensors_read(SENSOR *telemetry);
-bool onboard_sensors_init(void);
-bool onboard_sensors_close(void);
+bool hvac_sensors_read(SENSOR *telemetry);
+bool hvac_sensors_init(void);
+bool hvac_sensors_close(void);

@@ -33,7 +33,7 @@ else()
 endif()
 
 # Create executable
-add_executable (${PROJECT_NAME} main.c onboard_sensors.c onboard_status.c)
+add_executable (${PROJECT_NAME} main.c hvac_sensors.c hvac_status.c)
 target_link_libraries (${PROJECT_NAME} applibs pthread gcc_s c azure_sphere_devx)
 target_include_directories(${PROJECT_NAME} PUBLIC AzureSphereDevX/include)
 

@@ -1,3 +1,5 @@
+$StartTime = $(get-date)
+
 'set(AVNET TRUE "AVNET Azure Sphere Starter Kit Revision 1")' | Out-File -FilePath azsphere_board.txt
 Write-Output "`n=================Building for Azure Sphere Developer Board========================="
 Get-Content ./azsphere_board.txt
@@ -29,3 +31,13 @@ if ($?) {
 }
 
 Remove-Item ./azsphere_board.txt
+
+$elapsedTime = $(get-date) - $StartTime
+$totalTime = "{0:HH:mm:ss}" -f ([datetime]$elapsedTime.Ticks)
+
+if ($?) {
+    Write-Output "Build All for All Board completed successfully. Elapsed time: $totalTime"
+}
+else {
+    Write-Output "Build All for All Boards failed. Elapsed time: $totalTime"
+}

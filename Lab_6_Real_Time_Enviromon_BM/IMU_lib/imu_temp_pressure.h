@@ -12,6 +12,8 @@
 #include "os_hal_i2c.h"
 #include "utils.h"
 
+#undef EINVAL
+
 #define LSM6DSO_ADDRESS	   0x6A	  // I2C Address
 static const uint8_t i2c_speed = I2C_SCL_1000kHz;
 

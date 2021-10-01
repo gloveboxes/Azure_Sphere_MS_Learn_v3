@@ -26,7 +26,7 @@
 // https://docs.microsoft.com/en-us/azure/iot-pnp/overview-iot-plug-and-play
 #define IOT_PLUG_AND_PLAY_MODEL_ID "dtmi:com:example:azuresphere:labmonitor;1"
 #define NETWORK_INTERFACE "wlan0"
-#define SAMPLE_VERSION_NUMBER "1.01"
+#define HVAC_FIRMWARE_VERSION "3.02"
 
 // Forward declarations
 static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding);

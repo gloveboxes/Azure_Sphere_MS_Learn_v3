@@ -26,7 +26,7 @@
 // https://docs.microsoft.com/en-us/azure/iot-pnp/overview-iot-plug-and-play
 #define IOT_PLUG_AND_PLAY_MODEL_ID "dtmi:com:example:azuresphere:labmonitor;1"
 #define NETWORK_INTERFACE "wlan0"
-#define SAMPLE_VERSION_NUMBER "1.01"
+#define HVAC_FIRMWARE_VERSION "3.02"
 
 // Forward declarations
 static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg);

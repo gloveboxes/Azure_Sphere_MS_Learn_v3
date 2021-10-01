@@ -20,7 +20,7 @@
 #include <applibs/powermanagement.h>
 
 #define NETWORK_INTERFACE "wlan0"
-#define SAMPLE_VERSION_NUMBER "1.01"
+#define HVAC_FIRMWARE_VERSION "3.02"
 
 // Forward declarations
 static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer);

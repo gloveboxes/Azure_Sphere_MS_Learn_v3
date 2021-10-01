@@ -85,11 +85,11 @@ static DX_GPIO_BINDING *gpio_ledRgb[] = {
     &(DX_GPIO_BINDING){.pin = LED_BLUE, .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true, .name = "blue led"}};
 
 // declare timer bindings
-DX_TIMER_BINDING tmr_azure_status_led_off = {.name = "tmr_azure_status_led_off", .handler = azure_status_led_off_handler};
-DX_TIMER_BINDING tmr_azure_status_led_on = {.period = {0, 500 * ONE_MS}, .name = "tmr_azure_status_led_on", .handler = azure_status_led_on_handler};
-static DX_TIMER_BINDING tmr_publish_telemetry = {.period = {5, 0}, .name = "tmr_publish_telemetry", .handler = publish_telemetry_handler};
-static DX_TIMER_BINDING tmr_read_telemetry = {.period = {4, 0}, .name = "tmr_read_telemetry", .handler = read_telemetry_handler};
-static DX_TIMER_BINDING tmr_update_device_twins = {.period = {10, 0}, .name = "tmr_update_device_twins", .handler = update_device_twins};
+DX_TIMER_BINDING tmr_azure_status_led_off = { .name = "tmr_azure_status_led_off", .handler = azure_status_led_off_handler };
+DX_TIMER_BINDING tmr_azure_status_led_on = { .period = {0, 500 * ONE_MS}, .name = "tmr_azure_status_led_on", .handler = azure_status_led_on_handler };
+static DX_TIMER_BINDING tmr_publish_telemetry = { .period = {5, 0}, .name = "tmr_publish_telemetry", .handler = publish_telemetry_handler };
+static DX_TIMER_BINDING tmr_read_telemetry = { .period = {4, 0}, .name = "tmr_read_telemetry", .handler = read_telemetry_handler };
+static DX_TIMER_BINDING tmr_update_device_twins = { .period = {10, 0}, .name = "tmr_update_device_twins", .handler = update_device_twins };
 
 // All bindings referenced in the following binding sets are initialised in the
 // InitPeripheralsAndHandlers function

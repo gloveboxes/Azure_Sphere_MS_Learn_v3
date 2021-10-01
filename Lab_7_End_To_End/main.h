@@ -25,7 +25,7 @@
 #include <applibs/powermanagement.h>
 
 // https://docs.microsoft.com/en-us/azure/iot-pnp/overview-iot-plug-and-play
-#define IOT_PLUG_AND_PLAY_MODEL_ID "dtmi:com:example:azuresphere:labmonitor;1"
+#define IOT_PLUG_AND_PLAY_MODEL_ID "dtmi:com:example:azuresphere:labmonitor;2"
 #define NETWORK_INTERFACE "wlan0"
 #define SAMPLE_VERSION_NUMBER "1.01"
 
@@ -93,16 +93,14 @@ static DX_MESSAGE_PROPERTY *messageProperties[] = {&(DX_MESSAGE_PROPERTY){.key =
 static DX_MESSAGE_CONTENT_PROPERTIES contentProperties = {.contentEncoding = "utf-8", .contentType = "application/json"};
 
 // declare device twin bindings
-static DX_DEVICE_TWIN_BINDING dt_env_humidity = {.propertyName = "Humidity", .twinType = DX_DEVICE_TWIN_INT};
-static DX_DEVICE_TWIN_BINDING dt_env_pressure = {.propertyName = "Pressure", .twinType = DX_DEVICE_TWIN_INT};
-static DX_DEVICE_TWIN_BINDING dt_env_temperature = {.propertyName = "Temperature", .twinType = DX_DEVICE_TWIN_INT};
+static DX_DEVICE_TWIN_BINDING dt_hvac_humidity = {.propertyName = "HvacHumidity", .twinType = DX_DEVICE_TWIN_INT};
 static DX_DEVICE_TWIN_BINDING dt_hvac_operating_mode = {.propertyName = "HvacOperatingMode", .twinType = DX_DEVICE_TWIN_STRING};
-static DX_DEVICE_TWIN_BINDING dt_hvac_panel_message = {
-    .propertyName = "PanelMessage", .twinType = DX_DEVICE_TWIN_STRING, .handler = dt_set_panel_message_handler};
-static DX_DEVICE_TWIN_BINDING dt_hvac_sw_version = {.propertyName = "SoftwareVersion", .twinType = DX_DEVICE_TWIN_STRING};
-static DX_DEVICE_TWIN_BINDING dt_hvac_target_temperature = {
-    .propertyName = "TargetTemperature", .twinType = DX_DEVICE_TWIN_INT, .handler = dt_set_target_temperature_handler};
-static DX_DEVICE_TWIN_BINDING dt_utc_startup = {.propertyName = "StartupUtc", .twinType = DX_DEVICE_TWIN_STRING};
+static DX_DEVICE_TWIN_BINDING dt_hvac_panel_message = {.propertyName = "HvacPanelMessage", .twinType = DX_DEVICE_TWIN_STRING, .handler = dt_set_panel_message_handler};
+static DX_DEVICE_TWIN_BINDING dt_hvac_pressure = {.propertyName = "HvacPressure", .twinType = DX_DEVICE_TWIN_INT};
+static DX_DEVICE_TWIN_BINDING dt_hvac_start_utc = {.propertyName = "HvacStartUtc", .twinType = DX_DEVICE_TWIN_STRING};
+static DX_DEVICE_TWIN_BINDING dt_hvac_sw_version = {.propertyName = "HvacSoftwareVersion", .twinType = DX_DEVICE_TWIN_STRING};
+static DX_DEVICE_TWIN_BINDING dt_hvac_target_temperature = {.propertyName = "HvacTargetTemperature", .twinType = DX_DEVICE_TWIN_INT, .handler = dt_set_target_temperature_handler};
+static DX_DEVICE_TWIN_BINDING dt_hvac_temperature = {.propertyName = "HvacTemperature", .twinType = DX_DEVICE_TWIN_INT};
 
 // declare gpio bindings
 static DX_GPIO_BINDING gpio_operating_led = {
@@ -115,7 +113,7 @@ DX_TIMER_BINDING tmr_azure_status_led_off = {.name = "tmr_azure_status_led_off",
 DX_TIMER_BINDING tmr_azure_status_led_on = {.period = {0, 500 * ONE_MS}, .name = "tmr_azure_status_led_on", .handler = azure_status_led_on_handler};
 static DX_TIMER_BINDING tmr_read_telemetry = {.period = {4, 0}, .name = "tmr_read_telemetry", .handler = read_telemetry_handler};
 static DX_TIMER_BINDING tmr_publish_telemetry = {.period = {5, 0}, .name = "tmr_publish_telemetry", .handler = publish_telemetry_handler};
-static DX_TIMER_BINDING tmr_update_device_twins = {.period = {15, 0}, .name = "tmr_update_device_twins", .handler = update_device_twins};
+static DX_TIMER_BINDING tmr_update_device_twins = {.period = {10, 0}, .name = "tmr_update_device_twins", .handler = update_device_twins};
 static DX_TIMER_BINDING tmr_hvac_restart_oneshot_timer = {.name = "tmr_hvac_restart_oneshot_timer", .handler = hvac_delay_restart_handler};
 static DX_TIMER_BINDING tmr_watchdog = {.period = {30, 0}, .name = "tmr_publish_telemetry", .handler = watchdog_handler};
 
@@ -125,8 +123,8 @@ static DX_DIRECT_METHOD_BINDING dm_hvac_on = {.methodName = "HvacOn", .handler =
 static DX_DIRECT_METHOD_BINDING dm_hvac_restart = {.methodName = "HvacRestart", .handler = hvac_restart_handler};
 
 // All bindings referenced in the following binding sets are initialised in the InitPeripheralsAndHandlers function
-DX_DEVICE_TWIN_BINDING *device_twin_bindings[] = {&dt_utc_startup,  &dt_hvac_sw_version,    &dt_env_temperature,     &dt_env_pressure,
-                                                  &dt_env_humidity, &dt_hvac_panel_message, &dt_hvac_operating_mode, &dt_hvac_target_temperature};
+DX_DEVICE_TWIN_BINDING *device_twin_bindings[] = {&dt_hvac_start_utc,  &dt_hvac_sw_version,    &dt_hvac_temperature,     &dt_hvac_pressure,
+                                                  &dt_hvac_humidity, &dt_hvac_panel_message, &dt_hvac_operating_mode, &dt_hvac_target_temperature};
 
 DX_DIRECT_METHOD_BINDING *direct_method_binding_sets[] = {&dm_hvac_restart, &dm_hvac_on, &dm_hvac_off};
 DX_GPIO_BINDING *gpio_bindings[] = {&gpio_network_led, &gpio_operating_led};

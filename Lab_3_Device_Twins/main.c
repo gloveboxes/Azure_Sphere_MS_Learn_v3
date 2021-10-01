@@ -62,21 +62,21 @@ static void update_device_twins(EventLoopTimer *eventLoopTimer)
         {
             telemetry.previous.temperature = telemetry.latest.temperature;
             // Update temperature device twin
-            dx_deviceTwinReportValue(&dt_env_temperature, &telemetry.latest.temperature);
+            dx_deviceTwinReportValue(&dt_hvac_temperature, &telemetry.latest.temperature);
         }
 
         if (telemetry.previous.pressure != telemetry.latest.pressure)
         {
             telemetry.previous.pressure = telemetry.latest.pressure;
             // Update pressure device twin
-            dx_deviceTwinReportValue(&dt_env_pressure, &telemetry.latest.pressure);
+            dx_deviceTwinReportValue(&dt_hvac_pressure, &telemetry.latest.pressure);
         }
 
         if (telemetry.previous.humidity != telemetry.latest.humidity)
         {
             telemetry.previous.humidity = telemetry.latest.humidity;
             // Update humidity device twin
-            dx_deviceTwinReportValue(&dt_env_humidity, &telemetry.latest.humidity);
+            dx_deviceTwinReportValue(&dt_hvac_humidity, &telemetry.latest.humidity);
         }
     }
 }
@@ -246,7 +246,7 @@ static void hvac_startup_report(bool connected)
 {
     snprintf(msgBuffer, sizeof(msgBuffer), "HVAC firmware: %s, DevX version: %s", SAMPLE_VERSION_NUMBER, AZURE_SPHERE_DEVX_VERSION);
     dx_deviceTwinReportValue(&dt_hvac_sw_version, msgBuffer);                                  // DX_TYPE_STRING
-    dx_deviceTwinReportValue(&dt_utc_startup, dx_getCurrentUtc(msgBuffer, sizeof(msgBuffer))); // DX_TYPE_STRING
+    dx_deviceTwinReportValue(&dt_hvac_start_utc, dx_getCurrentUtc(msgBuffer, sizeof(msgBuffer))); // DX_TYPE_STRING
 
     dx_azureUnregisterConnectionChangedNotification(hvac_startup_report);
 }

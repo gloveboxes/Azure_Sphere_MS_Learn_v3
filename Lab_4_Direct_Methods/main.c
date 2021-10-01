@@ -196,7 +196,7 @@ static void hvac_startup_report(bool connected)
 {
     snprintf(msgBuffer, sizeof(msgBuffer), "HVAC firmware: %s, DevX version: %s", SAMPLE_VERSION_NUMBER, AZURE_SPHERE_DEVX_VERSION);
     dx_deviceTwinReportValue(&dt_hvac_sw_version, msgBuffer);                                  // DX_TYPE_STRING
-    dx_deviceTwinReportValue(&dt_utc_startup, dx_getCurrentUtc(msgBuffer, sizeof(msgBuffer))); // DX_TYPE_STRING
+    dx_deviceTwinReportValue(&dt_hvac_start_utc, dx_getCurrentUtc(msgBuffer, sizeof(msgBuffer))); // DX_TYPE_STRING
 
     dx_azureUnregisterConnectionChangedNotification(hvac_startup_report);
 }

@@ -1,6 +1,6 @@
 {
   "@context": "dtmi:dtdl:context;2",
-  "@id": "dtmi:com:example:azuresphere:labmonitor;1",
+  "@id": "dtmi:com:example:azuresphere:labmonitor;2",
   "@type": "Interface",
   "displayName": "Learning Path Lab Monitor",
   "contents": [
@@ -13,8 +13,18 @@
         "en": "Temperature"
       },
       "name": "Temperature",
-      "schema": "float",
+      "schema": "integer",
       "unit": "degreeCelsius"
+    },
+    {
+      "@type": [
+        "Telemetry"
+      ],
+      "displayName": {
+        "en": "Message ID"
+      },
+      "name": "MsgId",
+      "schema": "integer"
     },
     {
       "@type": [
@@ -25,7 +35,7 @@
         "en": "Pressure"
       },
       "name": "Pressure",
-      "schema": "float",
+      "schema": "integer",
       "unit": "millibar"
     },
     {
@@ -37,29 +47,44 @@
         "en": "Humidity"
       },
       "name": "Humidity",
-      "schema": "float",
+      "schema": "integer",
       "unit": "percent"
     },
     {
       "@type": [
+        "Telemetry",
+        "DataSize"
+      ],
+      "displayName": {
+        "en": "Peak user memory KiB"
+      },
+      "name": "PeakUserMemoryKiB",
+      "schema": "integer",
+      "unit": "kibibyte"
+    },
+    {
+      "@type": [
+        "Telemetry",
+        "DataSize"
+      ],
+      "displayName": {
+        "en": "Total memory KiB"
+      },
+      "name": "TotalMemoryKiB",
+      "schema": "integer",
+      "unit": "kibibyte"
+    },
+    {
+      "@type": [
         "Property",
         "Temperature"
       ],
       "displayName": {
-        "en": "Desired Temperature"
+        "en": "HVAC target temperature"
       },
-      "name": "DesiredTemperature",
-      "schema": "float",
-      "unit": "degreeCelsius",
-      "writable": true
-    },
-    {
-      "@type": "Property",
-      "displayName": {
-        "en": "Desired Sample Rate in Seconds [1..60]"
-      },
-      "name": "DesiredSampleRateInSeconds",
+      "name": "HvacTargetTemperature",
       "schema": "integer",
+      "unit": "degreeCelsius",
       "writable": true
     },
     {
@@ -68,49 +93,84 @@
         "Temperature"
       ],
       "displayName": {
-        "en": "Last reported temperature"
+        "en": "HVAC temperature"
       },
-      "name": "ReportedTemperature",
-      "schema": "float",
+      "name": "HvacTemperature",
+      "schema": "integer",
       "unit": "degreeCelsius",
+      "writable": false
+    },
+    {
+      "@type": [
+        "Property",
+        "RelativeHumidity"
+      ],
+      "displayName": {
+        "en": "HVAC humidity"
+      },
+      "name": "HvacHumidity",
+      "schema": "integer",
+      "unit": "percent",
+      "writable": false
+    },
+    {
+      "@type": [
+        "Property",
+        "Pressure"
+      ],
+      "displayName": {
+        "en": "HVAC pressure"
+      },
+      "name": "HvacPressure",
+      "schema": "integer",
+      "unit": "millibar",
       "writable": false
     },
     {
       "@type": "Property",
       "displayName": {
-        "en": "Last reported device restart time"
+        "en": "HVAC Start time"
       },
-      "name": "ReportedRestartUTC",
+      "name": "HvacStartUtc",
       "schema": "dateTime",
       "writable": false
     },
     {
       "@type": "Property",
       "displayName": {
-        "en": "Last reported HVAC operating mode"
+        "en": "HVAC operating mode"
       },
-      "name": "ReportedHvacState",
+      "name": "HvacOperatingMode",
       "schema": "string"
     },
     {
       "@type": "Property",
       "displayName": {
-        "en": "Last reported device start time (UTC)"
+        "en": "HVAC software version"
       },
-      "name": "ReportedDeviceStartTime",
-      "schema": "dateTime"
+      "name": "HvacSoftwareVersion",
+      "schema": "string"
+    },
+    {
+      "@type": "Property",
+      "displayName": {
+        "en": "HVAC panel message"
+      },
+      "name": "HvacPanelMessage",
+      "schema": "string",
+      "writable": true
     },
     {
       "@type": "Command",
       "commandType": "synchronous",
       "displayName": {
-        "en": "RestartDevice"
+        "en": "HvacRestart"
       },
-      "name": "RestartDevice",
+      "name": "HvacRestart",
       "request": {
         "@type": "CommandPayload",
         "displayName": {
-          "en": "Restart Delay in seconds [3..9]"
+          "en": "Restart Delay in seconds [3..10]"
         },
         "name": "RestartDelay",
         "schema": "integer"
@@ -118,11 +178,23 @@
       "response": {
         "@type": "CommandPayload",
         "displayName": {
-          "en": "Restart Device Result"
+          "en": "Restart HVAC Result"
         },
-        "name": "RestartDeviceResult",
+        "name": "HvacRestartResult",
         "schema": "string"
       }
+    },
+    {
+      "@type": "Command",
+      "commandType": "synchronous",
+      "displayName": "Hvac On",
+      "name": "HvacOn"
+    },
+    {
+      "@type": "Command",
+      "commandType": "synchronous",
+      "displayName": "Hvac Off",
+      "name": "HvacOff"
     }
   ]
 }

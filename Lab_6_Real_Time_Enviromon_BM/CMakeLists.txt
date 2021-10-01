@@ -15,14 +15,15 @@ string(TOLOWER ${ProjectId} ProjectId)
 
 project(${ProjectId} C)
 
+# Check if there is a global azsphere_board.cmake file
+get_filename_component(PARENT_DIR ${PROJECT_SOURCE_DIR} DIRECTORY)
+
 if (EXISTS "${PARENT_DIR}/azsphere_board.txt")
     include("${PARENT_DIR}/azsphere_board.txt")
 else()
     include(azsphere_board.txt)
 endif()
 
-# Check if there is a global azsphere_board.cmake file
-get_filename_component(PARENT_DIR ${PROJECT_SOURCE_DIR} DIRECTORY)
 if (EXISTS "${PARENT_DIR}/Tools/cmake/azsphere_config.cmake")
     include(../Tools/cmake/azsphere_config.cmake)
     auto_generate_tools_revision()

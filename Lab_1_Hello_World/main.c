@@ -55,7 +55,7 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
         return;
     }
 
-    if (telemetry.valid && dx_isAzureConnected())
+    if (telemetry.valid)
     {
         // clang-format off
         // Serialize telemetry as JSON
@@ -69,9 +69,6 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
         // clang-format on
         {
             dx_Log_Debug("%s\n", msgBuffer);
-
-            // Publish telemetry message to IoT Hub/Central
-            dx_azurePublish(msgBuffer, strlen(msgBuffer), messageProperties, NELEMS(messageProperties), &contentProperties);
         }
         else
         {
@@ -105,100 +102,25 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
     // clang-format on
 }
 
-/***********************************************************************************************************
- * REMOTE OPERATIONS: DIRECT METHODS
- *
- * Restart HVAC
- * Set HVAC panel message
- * Turn HVAC on and off
- **********************************************************************************************************/
-
-// Direct method name = HvacOn
-static DX_DIRECT_METHOD_RESPONSE_CODE hvac_on_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
-{
-    dx_gpioOn((DX_GPIO_BINDING *)directMethodBinding->context);
-    return DX_METHOD_SUCCEEDED;
-}
-
-// Direct method name = HvacOff
-static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
-{
-    dx_gpioOff((DX_GPIO_BINDING *)directMethodBinding->context);
-    return DX_METHOD_SUCCEEDED;
-}
-
-/***********************************************************************************************************
- * PRODUCTION
- *
- * Enable remote HVAC restart
- * Update software version and Azure connect UTC time device twins on first connection
- **********************************************************************************************************/
-
 /// <summary>
-/// Restart the Device
+/// Handler to check for Button Presses
 /// </summary>
-static void hvac_delay_restart_handler(EventLoopTimer *eventLoopTimer)
+static void read_buttons_handler(EventLoopTimer *eventLoopTimer)
 {
+    static GPIO_Value_Type button_b_state;
+    static bool led_state = false;
+
     if (ConsumeEventLoopTimerEvent(eventLoopTimer) != 0)
     {
         dx_terminate(DX_ExitCode_ConsumeEventLoopTimeEvent);
         return;
     }
-    PowerManagement_ForceSystemReboot();
-}
 
-/// <summary>
-/// Start Device Power Restart Direct Method 'ResetMethod' integer seconds eg 5
-/// </summary>
-static DX_DIRECT_METHOD_RESPONSE_CODE hvac_restart_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
-{
-    // Allocate and initialize a response message buffer. The
-    // calling function is responsible for the freeing memory
-    const size_t responseLen = 100;
-    static struct timespec period;
-
-    *responseMsg = (char *)malloc(responseLen);
-    memset(*responseMsg, 0, responseLen);
-
-    if (json_value_get_type(json) != JSONNumber)
+    if (dx_gpioStateGet(&gpio_button_b, &button_b_state))
     {
-        return DX_METHOD_FAILED;
+        led_state = !led_state;
+        dx_gpioStateSet(&gpio_network_led, led_state);
     }
-
-    int seconds = (int)json_value_get_number(json);
-
-    // leave enough time for the device twin dt_reportedRestartUtc
-    // to update before restarting the device
-    if (IN_RANGE(seconds, 3, 10))
-    {
-        // Create Direct Method Response
-        snprintf(*responseMsg, responseLen, "%s called. Restart in %d seconds", directMethodBinding->methodName, seconds);
-
-        // Set One Shot DX_TIMER_BINDING
-        period = (struct timespec){.tv_sec = seconds, .tv_nsec = 0};
-        dx_timerOneShotSet(&tmr_hvac_restart_oneshot_timer, &period);
-
-        return DX_METHOD_SUCCEEDED;
-    }
-    else
-    {
-        snprintf(*responseMsg, responseLen, "%s called. Restart Failed. Seconds out of range: %d", directMethodBinding->methodName, seconds);
-
-        return DX_METHOD_FAILED;
-    }
-}
-
-/// <summary>
-/// Called when the Azure connection status changes then unregisters this callback
-/// </summary>
-/// <param name="connected"></param>
-static void hvac_startup_report(bool connected)
-{
-    snprintf(msgBuffer, sizeof(msgBuffer), "HVAC firmware: %s, DevX version: %s", SAMPLE_VERSION_NUMBER, AZURE_SPHERE_DEVX_VERSION);
-    dx_deviceTwinReportValue(&dt_hvac_sw_version, msgBuffer);                                  // DX_TYPE_STRING
-    dx_deviceTwinReportValue(&dt_utc_startup, dx_getCurrentUtc(msgBuffer, sizeof(msgBuffer))); // DX_TYPE_STRING
-
-    dx_azureUnregisterConnectionChangedNotification(hvac_startup_report);
 }
 
 /***********************************************************************************************************
@@ -216,18 +138,9 @@ static void InitPeripheralsAndHandlers(void)
 {
     hvac_sensors_init();
     dx_Log_Debug_Init(Log_Debug_Time_buffer, sizeof(Log_Debug_Time_buffer));
-    dx_azureConnect(&dx_config, NETWORK_INTERFACE, IOT_PLUG_AND_PLAY_MODEL_ID);
     dx_gpioSetOpen(gpio_bindings, NELEMS(gpio_bindings));
-    dx_gpioSetOpen(gpio_ledRgb, NELEMS(gpio_ledRgb));
     dx_timerSetStart(timer_bindings, NELEMS(timer_bindings));
-    dx_deviceTwinSubscribe(device_twin_bindings, NELEMS(device_twin_bindings));
-    dx_directMethodSubscribe(direct_method_bindings, NELEMS(direct_method_bindings));
-
     dx_azureRegisterConnectionChangedNotification(azure_connection_state);
-    dx_azureRegisterConnectionChangedNotification(hvac_startup_report);
-
-    // initialize previous environment sensor variables
-    telemetry.previous.temperature = telemetry.previous.pressure = telemetry.previous.humidity = INT32_MAX;
 }
 
 /// <summary>
@@ -236,21 +149,13 @@ static void InitPeripheralsAndHandlers(void)
 static void ClosePeripheralsAndHandlers(void)
 {
     dx_timerSetStop(timer_bindings, NELEMS(timer_bindings));
-    dx_deviceTwinUnsubscribe();
-    dx_directMethodUnsubscribe();
     dx_gpioSetClose(gpio_bindings, NELEMS(gpio_bindings));
-    dx_gpioSetClose(gpio_ledRgb, NELEMS(gpio_ledRgb));
     dx_timerEventLoopStop();
 }
 
 int main(int argc, char *argv[])
 {
     dx_registerTerminationHandler();
-
-    if (!dx_configParseCmdLineArguments(argc, argv, &dx_config))
-    {
-        return dx_getTerminationExitCode();
-    }
 
     InitPeripheralsAndHandlers();
 

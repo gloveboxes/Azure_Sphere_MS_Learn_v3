@@ -243,14 +243,14 @@ static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBindi
 // Direct method name = HvacOn
 static DX_DIRECT_METHOD_RESPONSE_CODE hvac_on_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
 {
-    dx_gpioOn(&gpio_operating_led);
+    dx_gpioOn((DX_GPIO_BINDING *)directMethodBinding->context);
     return DX_METHOD_SUCCEEDED;
 }
 
 // Direct method name =HvacOff
 static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
 {
-    dx_gpioOff(&gpio_operating_led);
+    dx_gpioOff((DX_GPIO_BINDING *)directMethodBinding->context);
     return DX_METHOD_SUCCEEDED;
 }
 

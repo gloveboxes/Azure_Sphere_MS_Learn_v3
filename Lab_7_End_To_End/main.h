@@ -120,8 +120,8 @@ static DX_TIMER_BINDING tmr_hvac_restart_oneshot_timer = {.name = "tmr_hvac_rest
 static DX_TIMER_BINDING tmr_watchdog = {.period = {30, 0}, .name = "tmr_publish_telemetry", .handler = watchdog_handler};
 
 // Declare direct method bindings
-static DX_DIRECT_METHOD_BINDING dm_hvac_off = {.methodName = "HvacOff", .handler = hvac_off_handler};
-static DX_DIRECT_METHOD_BINDING dm_hvac_on = {.methodName = "HvacOn", .handler = hvac_on_handler};
+static DX_DIRECT_METHOD_BINDING dm_hvac_off = {.methodName = "HvacOff", .handler = hvac_off_handler, .context = &gpio_operating_led};
+static DX_DIRECT_METHOD_BINDING dm_hvac_on = {.methodName = "HvacOn", .handler = hvac_on_handler, .context = &gpio_operating_led};
 static DX_DIRECT_METHOD_BINDING dm_hvac_restart = {.methodName = "HvacRestart", .handler = hvac_restart_handler};
 
 // All bindings referenced in the following binding sets are initialised in the InitPeripheralsAndHandlers function

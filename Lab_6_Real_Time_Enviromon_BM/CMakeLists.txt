@@ -74,6 +74,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 add_subdirectory(mt3620_m4_software/MT3620_M4_Driver ./lib/MT3620_M4_Driver)
 target_link_libraries(${PROJECT_NAME} MT3620_M4_Driver)
 
+set_source_files_properties(IMU_lib/lsm6dso_reg.c PROPERTIES COMPILE_FLAGS -Wno-maybe-uninitialized)
+
 # Linker, Image
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_DEPENDS ${CMAKE_SOURCE_DIR}/linker.ld)
 

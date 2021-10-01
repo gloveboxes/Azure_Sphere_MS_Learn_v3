@@ -84,6 +84,8 @@ add_subdirectory(threadx)
 target_link_libraries(${PROJECT_NAME} MT3620_M4_Driver azrtos::threadx)
 target_link_libraries(${PROJECT_NAME} m)
 
+set_source_files_properties(IMU_lib/lsm6dso_reg.c PROPERTIES COMPILE_FLAGS -Wno-maybe-uninitialized)
+
 set_target_properties (${PROJECT_NAME} PROPERTIES LINK_DEPENDS ${PROJECT_SOURCE_DIR}/linker.ld)
 
 set(BOARD_COUNTER 0)

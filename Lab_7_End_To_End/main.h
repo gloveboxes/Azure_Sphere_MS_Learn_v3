@@ -51,6 +51,7 @@ static void watchdog_handler(EventLoopTimer *eventLoopTimer);
 static char msgBuffer[JSON_MESSAGE_BYTES] = {0};
 static char display_panel_message[64];
 DX_USER_CONFIG dx_config;
+bool azure_connected = false;
 static char *hvac_state[] = {"Unknown", "Heating", "Green", "Cooling", "On", "Off"};
 
 typedef struct

@@ -55,7 +55,7 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
         return;
     }
 
-    if (telemetry.valid && dx_isAzureConnected())
+    if (telemetry.valid && azure_connected)
     {
         // clang-format off
         // Serialize telemetry as JSON
@@ -108,10 +108,20 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
 /***********************************************************************************************************
  * APPLICATION BASICS
  *
+ * Set Azure connection state
  * Initialize resources
  * Close resources
  * Run the main event loop
  **********************************************************************************************************/
+
+/// <summary>
+/// Update local azure_connected with new connection status
+/// </summary>
+/// <param name="connected"></param>
+void azure_connection_state(bool connected)
+{
+    azure_connected = connected;
+}
 
 /// <summary>
 ///  Initialize peripherals, device twins, direct methods, timer_bindings.

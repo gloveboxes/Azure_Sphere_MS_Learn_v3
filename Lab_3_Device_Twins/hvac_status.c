@@ -1,16 +1,5 @@
 #include "hvac_status.h"
 
-static bool azure_connected = false;
-
-/// <summary>
-/// Update local azure_connected with new connection status
-/// </summary>
-/// <param name="connected"></param>
-void azure_connection_state(bool connected)
-{
-    azure_connected = connected;
-}
-
 /// <summary>
 /// Handler to turn off LEDs
 /// </summary>

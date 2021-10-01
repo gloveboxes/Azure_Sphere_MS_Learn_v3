@@ -11,7 +11,4 @@
 extern DX_GPIO_BINDING gpio_network_led;
 extern DX_TIMER_BINDING tmr_azure_status_led_off;
 extern DX_TIMER_BINDING tmr_azure_status_led_on;
-
-void azure_connection_state(bool connected);
-void flash_led_off_handler(EventLoopTimer *eventLoopTimer);
-void flash_led_on_handler(EventLoopTimer *eventLoopTimer);
+extern bool azure_connected;

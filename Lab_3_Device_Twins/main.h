@@ -43,9 +43,10 @@ void azure_status_led_on_handler(EventLoopTimer *eventLoopTimer);
 static char msgBuffer[JSON_MESSAGE_BYTES] = {0};
 static char display_panel_message[64];
 DX_USER_CONFIG dx_config;
-static char *hvac_state[] = {"Unknown", "Heating", "Green", "Cooling", "On", "Off"};
-
+bool azure_connected = false;
 ENVIRONMENT telemetry;
+
+static char *hvac_state[] = {"Unknown", "Heating", "Green", "Cooling", "On", "Off"};
 
 #define Log_Debug(f_, ...) dx_Log_Debug((f_), ##__VA_ARGS__)
 static char Log_Debug_Time_buffer[128];

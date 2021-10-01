@@ -42,7 +42,7 @@ void azure_status_led_on_handler(EventLoopTimer *eventLoopTimer);
 #define JSON_MESSAGE_BYTES 256
 static char msgBuffer[JSON_MESSAGE_BYTES] = {0};
 DX_USER_CONFIG dx_config;
-
+bool azure_connected = false;
 ENVIRONMENT telemetry;
 
 #define Log_Debug(f_, ...) dx_Log_Debug((f_), ##__VA_ARGS__)

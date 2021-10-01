@@ -195,7 +195,7 @@ static DX_DIRECT_METHOD_RESPONSE_CODE hvac_restart_handler(JSON_Value *json, DX_
 static void hvac_startup_report(bool connected)
 {
     snprintf(msgBuffer, sizeof(msgBuffer), "HVAC firmware: %s, DevX version: %s", SAMPLE_VERSION_NUMBER, AZURE_SPHERE_DEVX_VERSION);
-    dx_deviceTwinReportValue(&dt_hvac_sw_version, msgBuffer);                                  // DX_TYPE_STRING
+    dx_deviceTwinReportValue(&dt_hvac_sw_version, msgBuffer);                                     // DX_TYPE_STRING
     dx_deviceTwinReportValue(&dt_hvac_start_utc, dx_getCurrentUtc(msgBuffer, sizeof(msgBuffer))); // DX_TYPE_STRING
 
     dx_azureUnregisterConnectionChangedNotification(hvac_startup_report);
@@ -204,10 +204,20 @@ static void hvac_startup_report(bool connected)
 /***********************************************************************************************************
  * APPLICATION BASICS
  *
+ * Set Azure connection state
  * Initialize resources
  * Close resources
  * Run the main event loop
  **********************************************************************************************************/
+
+/// <summary>
+/// Update local azure_connected with new connection status
+/// </summary>
+/// <param name="connected"></param>
+void azure_connection_state(bool connected)
+{
+    azure_connected = connected;
+}
 
 /// <summary>
 ///  Initialize peripherals, device twins, direct methods, timer_bindings.

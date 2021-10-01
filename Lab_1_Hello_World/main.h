@@ -38,7 +38,7 @@ static char Log_Debug_Time_buffer[128];
 // declare gpio bindings
 DX_GPIO_BINDING gpio_network_led = {
     .pin = NETWORK_CONNECTED_LED, .name = "network_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
-static DX_GPIO_BINDING gpio_button_b = {.pin = BUTTON_B, .name = "buttonB", .direction = DX_INPUT, .detect = DX_GPIO_DETECT_LOW};
+static DX_GPIO_BINDING gpio_button_a = {.pin = BUTTON_A, .name = "button_a", .direction = DX_INPUT, .detect = DX_GPIO_DETECT_LOW};
 
 // declare timer bindings
 static DX_TIMER_BINDING tmr_read_telemetry = {.period = {4, 0}, .name = "tmr_read_telemetry", .handler = read_telemetry_handler};
@@ -46,5 +46,5 @@ static DX_TIMER_BINDING tmr_publish_telemetry = {.period = {5, 0}, .name = "tmr_
 static DX_TIMER_BINDING tmr_read_buttons = {.period = {0, 100 * ONE_MS}, .name = "tmr_read_buttons", .handler = read_buttons_handler};
 
 // All bindings referenced in the following binding sets are initialised in the InitPeripheralsAndHandlers function
-DX_GPIO_BINDING *gpio_bindings[] = {&gpio_network_led, &gpio_button_b};
+DX_GPIO_BINDING *gpio_bindings[] = {&gpio_network_led, &gpio_button_a};
 DX_TIMER_BINDING *timer_bindings[] = {&tmr_publish_telemetry, &tmr_read_telemetry, &tmr_read_buttons};

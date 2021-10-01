@@ -107,7 +107,7 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
 /// </summary>
 static void read_buttons_handler(EventLoopTimer *eventLoopTimer)
 {
-    static GPIO_Value_Type button_b_state;
+    static GPIO_Value_Type button_a_state;
     static bool led_state = false;
 
     if (ConsumeEventLoopTimerEvent(eventLoopTimer) != 0)
@@ -116,7 +116,7 @@ static void read_buttons_handler(EventLoopTimer *eventLoopTimer)
         return;
     }
 
-    if (dx_gpioStateGet(&gpio_button_b, &button_b_state))
+    if (dx_gpioStateGet(&gpio_button_a, &button_a_state))
     {
         led_state = !led_state;
         dx_gpioStateSet(&gpio_network_led, led_state);

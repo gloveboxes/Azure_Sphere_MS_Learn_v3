@@ -13,8 +13,8 @@ project(${ProjectId} C)
 # Check if there is a global azsphere_board.cmake file
 get_filename_component(PARENT_DIR ${PROJECT_SOURCE_DIR} DIRECTORY)
 
-if (EXISTS "${PARENT_DIR}/azsphere_board.txt")
-    include("${PARENT_DIR}/azsphere_board.txt")
+if (EXISTS "${PARENT_DIR}/azsphere_board.global.txt")
+    include("${PARENT_DIR}/azsphere_board.global.txt")
 else()
     include(azsphere_board.txt)
 endif()

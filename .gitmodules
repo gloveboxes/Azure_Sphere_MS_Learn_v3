@@ -55,3 +55,9 @@
 [submodule "Lab_1_Hello_World/AzureSphereDrivers"]
 	path = Lab_1_Hello_World/AzureSphereDrivers
 	url = https://github.com/Azure-Sphere-DevX/AzureSphereDrivers.git
+[submodule "Lab_5_Real_Time_Enviromon_BM/HardwareDefinitions"]
+	path = Lab_5_Real_Time_Enviromon_BM/HardwareDefinitions
+	url = https://github.com/Azure-Sphere-DevX/AzureSphereDevX.HardwareDefinitions.git
+[submodule "Lab_5_Real_Time_Enviromon_BM/mt3620_m4_software"]
+	path = Lab_5_Real_Time_Enviromon_BM/mt3620_m4_software
+	url = https://github.com/MediaTek-Labs/mt3620_m4_software.git

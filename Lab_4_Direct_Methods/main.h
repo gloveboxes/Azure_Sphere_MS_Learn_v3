@@ -29,8 +29,8 @@
 #define HVAC_FIRMWARE_VERSION "3.02"
 
 // Forward declarations
-static DX_DIRECT_METHOD_RESPONSE_CODE hvac_off_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg);
-static DX_DIRECT_METHOD_RESPONSE_CODE hvac_on_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg);
+static DX_DIRECT_METHOD_RESPONSE_CODE gpio_off_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg);
+static DX_DIRECT_METHOD_RESPONSE_CODE gpio_on_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg);
 static DX_DIRECT_METHOD_RESPONSE_CODE hvac_restart_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg);
 static void hvac_delay_restart_handler(EventLoopTimer *eventLoopTimer);
 static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer);
@@ -83,8 +83,8 @@ static DX_TIMER_BINDING tmr_publish_telemetry = {.period = {5, 0}, .name = "tmr_
 static DX_TIMER_BINDING tmr_read_telemetry = {.period = {4, 0}, .name = "tmr_read_telemetry", .handler = read_telemetry_handler};
 
 // Declare direct method bindings
-static DX_DIRECT_METHOD_BINDING dm_hvac_off = {.methodName = "HvacOff", .handler = hvac_off_handler, .context = &gpio_operating_led};
-static DX_DIRECT_METHOD_BINDING dm_hvac_on = {.methodName = "HvacOn", .handler = hvac_on_handler, .context = &gpio_operating_led};
+static DX_DIRECT_METHOD_BINDING dm_hvac_off = {.methodName = "HvacOff", .handler = gpio_off_handler, .context = &gpio_operating_led};
+static DX_DIRECT_METHOD_BINDING dm_hvac_on = {.methodName = "HvacOn", .handler = gpio_on_handler, .context = &gpio_operating_led};
 static DX_DIRECT_METHOD_BINDING dm_hvac_restart = {.methodName = "HvacRestart", .handler = hvac_restart_handler};
 
 // All bindings referenced in the following binding sets are initialised in the

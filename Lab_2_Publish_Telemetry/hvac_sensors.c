@@ -7,7 +7,7 @@
 
 bool hvac_sensors_init(void) {
     srand((unsigned int)time(NULL)); // seed the random number generator for fake telemetry
-    avnet_imu_initialize(I2cMaster2);
+    avnet_imu_initialize(I2cMaster2, I2C_BUS_SPEED_FAST_PLUS);
 
     // lp_calibrate_angular_rate(); // call if using gyro
     // lp_OpenADC();

@@ -43,8 +43,22 @@
  **********************************************************************************************************/
 
 /// <summary>
-/// Update temperature and pressure device twins
-/// Only update if data changes to minimise costs
+/// Determine if telemetry value changed. If so, update it's device twin
+/// </summary>
+/// <param name="new_value"></param>
+/// <param name="previous_value"></param>
+/// <param name="device_twin"></param>
+static void device_twin_update(int *latest_value, int *previous_value, DX_DEVICE_TWIN_BINDING *device_twin)
+{
+    if (*latest_value != *previous_value)
+    {
+        *previous_value = *latest_value;
+        dx_deviceTwinReportValue(device_twin, latest_value);
+    }
+}
+
+/// <summary>
+/// Only update device twins if data changed to minimize network and cloud costs
 /// </summary>
 /// <param name="temperature"></param>
 /// <param name="pressure"></param>
@@ -58,26 +72,9 @@ static void update_device_twins(EventLoopTimer *eventLoopTimer)
 
     if (telemetry.valid && azure_connected)
     {
-        if (telemetry.previous.temperature != telemetry.latest.temperature)
-        {
-            telemetry.previous.temperature = telemetry.latest.temperature;
-            // Update temperature device twin
-            dx_deviceTwinReportValue(&dt_hvac_temperature, &telemetry.latest.temperature);
-        }
-
-        if (telemetry.previous.pressure != telemetry.latest.pressure)
-        {
-            telemetry.previous.pressure = telemetry.latest.pressure;
-            // Update pressure device twin
-            dx_deviceTwinReportValue(&dt_hvac_pressure, &telemetry.latest.pressure);
-        }
-
-        if (telemetry.previous.humidity != telemetry.latest.humidity)
-        {
-            telemetry.previous.humidity = telemetry.latest.humidity;
-            // Update humidity device twin
-            dx_deviceTwinReportValue(&dt_hvac_humidity, &telemetry.latest.humidity);
-        }
+        device_twin_update(&telemetry.latest.temperature, &telemetry.previous.temperature, &dt_hvac_temperature);
+        device_twin_update(&telemetry.latest.pressure, &telemetry.previous.pressure, &dt_hvac_pressure);
+        device_twin_update(&telemetry.latest.humidity, &telemetry.previous.humidity, &dt_hvac_humidity);
     }
 }
 
@@ -105,7 +102,7 @@ void set_hvac_operating_mode(void)
                 dx_gpioOff(gpio_ledRgb[telemetry.previous_operating_mode - 1]);
             }
             telemetry.previous_operating_mode = telemetry.latest_operating_mode;
-            // Update HVAC operating more device twin
+            // Update HVAC operating mode device twin
             dx_deviceTwinReportValue(&dt_hvac_operating_mode, hvac_state[telemetry.latest_operating_mode]);
         }
 

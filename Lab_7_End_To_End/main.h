@@ -27,7 +27,7 @@
 // https://docs.microsoft.com/en-us/azure/iot-pnp/overview-iot-plug-and-play
 #define IOT_PLUG_AND_PLAY_MODEL_ID "dtmi:com:example:azuresphere:labmonitor;2"
 #define NETWORK_INTERFACE "wlan0"
-#define HVAC_FIRMWARE_VERSION "3.02"
+#define HVAC_FIRMWARE_VERSION "3.05"
 
 #define CORE_ENVIRONMENT_COMPONENT_ID "6583cf17-d321-4d72-8283-0b7c5b56442b"
 
@@ -35,7 +35,6 @@
 static DX_DIRECT_METHOD_RESPONSE_CODE gpio_off_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg);
 static DX_DIRECT_METHOD_RESPONSE_CODE gpio_on_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg);
 static DX_DIRECT_METHOD_RESPONSE_CODE hvac_restart_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg);
-static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding);
 static void dt_set_target_temperature_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding);
 static void hvac_delay_restart_handler(EventLoopTimer *eventLoopTimer);
 static void intercore_environment_receive_msg_handler(void *data_block, ssize_t message_length);
@@ -49,7 +48,6 @@ static void watchdog_handler(EventLoopTimer *eventLoopTimer);
 // Number of bytes to allocate for the JSON telemetry message for IoT Hub/Central
 #define JSON_MESSAGE_BYTES 256
 static char msgBuffer[JSON_MESSAGE_BYTES] = {0};
-static char display_panel_message[64];
 DX_USER_CONFIG dx_config;
 bool azure_connected = false;
 static char *hvac_state[] = {"Unknown", "Heating", "Green", "Cooling", "On", "Off"};
@@ -97,10 +95,8 @@ static DX_MESSAGE_CONTENT_PROPERTIES contentProperties = {.contentEncoding = "ut
 static DX_DEVICE_TWIN_BINDING dt_defer_requested = {.propertyName = "DeferredUpdateRequest", .twinType = DX_DEVICE_TWIN_STRING};
 static DX_DEVICE_TWIN_BINDING dt_hvac_humidity = {.propertyName = "HvacHumidity", .twinType = DX_DEVICE_TWIN_INT};
 static DX_DEVICE_TWIN_BINDING dt_hvac_operating_mode = {.propertyName = "HvacOperatingMode", .twinType = DX_DEVICE_TWIN_STRING};
-static DX_DEVICE_TWIN_BINDING dt_hvac_panel_message = {
-    .propertyName = "HvacPanelMessage", .twinType = DX_DEVICE_TWIN_STRING, .handler = dt_set_panel_message_handler};
 static DX_DEVICE_TWIN_BINDING dt_hvac_pressure = {.propertyName = "HvacPressure", .twinType = DX_DEVICE_TWIN_INT};
-static DX_DEVICE_TWIN_BINDING dt_hvac_start_utc = {.propertyName = "HvacStartUtc", .twinType = DX_DEVICE_TWIN_STRING};
+static DX_DEVICE_TWIN_BINDING dt_hvac_start_utc = {.propertyName = "HvacStartupUtc", .twinType = DX_DEVICE_TWIN_STRING};
 static DX_DEVICE_TWIN_BINDING dt_hvac_sw_version = {.propertyName = "HvacSoftwareVersion", .twinType = DX_DEVICE_TWIN_STRING};
 static DX_DEVICE_TWIN_BINDING dt_hvac_target_temperature = {
     .propertyName = "HvacTargetTemperature", .twinType = DX_DEVICE_TWIN_INT, .handler = dt_set_target_temperature_handler};
@@ -127,9 +123,8 @@ static DX_DIRECT_METHOD_BINDING dm_hvac_on = {.methodName = "HvacOn", .handler =
 static DX_DIRECT_METHOD_BINDING dm_hvac_restart = {.methodName = "HvacRestart", .handler = hvac_restart_handler};
 
 // All bindings referenced in the following binding sets are initialised in the InitPeripheralsAndHandlers function
-DX_DEVICE_TWIN_BINDING *device_twin_bindings[] = {&dt_hvac_start_utc,     &dt_hvac_sw_version,     &dt_hvac_temperature,
-                                                  &dt_hvac_pressure,      &dt_defer_requested,     &dt_hvac_humidity,
-                                                  &dt_hvac_panel_message, &dt_hvac_operating_mode, &dt_hvac_target_temperature};
+DX_DEVICE_TWIN_BINDING *device_twin_bindings[] = {&dt_hvac_start_utc,  &dt_hvac_sw_version, &dt_hvac_temperature,    &dt_hvac_pressure,
+                                                  &dt_defer_requested, &dt_hvac_humidity,   &dt_hvac_operating_mode, &dt_hvac_target_temperature};
 
 DX_DIRECT_METHOD_BINDING *direct_method_binding_sets[] = {&dm_hvac_restart, &dm_hvac_on, &dm_hvac_off};
 

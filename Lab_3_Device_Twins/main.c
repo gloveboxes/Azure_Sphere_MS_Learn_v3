@@ -130,12 +130,12 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
         // clang-format off
         // Serialize telemetry as JSON
         if (dx_jsonSerialize(msgBuffer, sizeof(msgBuffer), 6,
-            DX_JSON_INT, "MsgId", msgId++,
-            DX_JSON_INT, "Temperature", telemetry.latest.temperature,
-            DX_JSON_INT, "Pressure", telemetry.latest.pressure,
-            DX_JSON_INT, "Humidity", telemetry.latest.humidity,
-            DX_JSON_INT, "PeakUserMemoryKiB", (int)Applications_GetPeakUserModeMemoryUsageInKB(),
-            DX_JSON_INT, "TotalMemoryKiB", (int)Applications_GetTotalMemoryUsageInKB()))
+            DX_JSON_INT, "msgId", msgId++,
+            DX_JSON_INT, "temperature", telemetry.latest.temperature,
+            DX_JSON_INT, "pressure", telemetry.latest.pressure,
+            DX_JSON_INT, "humidity", telemetry.latest.humidity,
+            DX_JSON_INT, "peakUserMemoryKiB", (int)Applications_GetPeakUserModeMemoryUsageInKB(),
+            DX_JSON_INT, "totalMemoryKiB", (int)Applications_GetTotalMemoryUsageInKB()))
         // clang-format on
         {
             dx_Log_Debug("%s\n", msgBuffer);
@@ -200,31 +200,6 @@ static void dt_set_target_temperature_handler(DX_DEVICE_TWIN_BINDING *deviceTwin
     }
     else
     {
-        dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_ERROR);
-    }
-}
-
-// This device twin callback demonstrates how to manage device twins of type string.
-// A reference to the string is passed that is available only for the lifetime of the callback.
-// You must copy to a global char array to preserve the string outside of the callback.
-// As strings are arbitrary length on a constrained device this gives you, the developer, control of
-// memory allocation.
-static void dt_set_panel_message_handler(DX_DEVICE_TWIN_BINDING *deviceTwinBinding)
-{
-    char *panel_message = (char *)deviceTwinBinding->propertyValue;
-
-    // Is the message size less than the destination buffer size and printable characters
-    if (strlen(panel_message) < sizeof(display_panel_message) && dx_isStringPrintable(panel_message))
-    {
-        strncpy(display_panel_message, panel_message, sizeof(display_panel_message));
-        dx_Log_Debug("Virtual HVAC Display Panel Message: %s\n", display_panel_message);
-        // IoT Plug and Play acknowledge completed
-        dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_COMPLETED);
-    }
-    else
-    {
-        dx_Log_Debug("Local copy failed. String too long or invalid data\n");
-        // IoT Plug and Play acknowledge error
         dx_deviceTwinAckDesiredValue(deviceTwinBinding, deviceTwinBinding->propertyValue, DX_DEVICE_TWIN_RESPONSE_ERROR);
     }
 }

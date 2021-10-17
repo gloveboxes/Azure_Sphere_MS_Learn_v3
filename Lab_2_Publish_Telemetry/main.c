@@ -60,12 +60,12 @@ static void publish_telemetry_handler(EventLoopTimer *eventLoopTimer)
         // clang-format off
         // Serialize telemetry as JSON
         if (dx_jsonSerialize(msgBuffer, sizeof(msgBuffer), 6,
-            DX_JSON_INT, "MsgId", msgId++,
-            DX_JSON_INT, "Temperature", telemetry.latest.temperature,
-            DX_JSON_INT, "Pressure", telemetry.latest.pressure,
-            DX_JSON_INT, "Humidity", telemetry.latest.humidity,
-            DX_JSON_INT, "PeakUserMemoryKiB", (int)Applications_GetPeakUserModeMemoryUsageInKB(),
-            DX_JSON_INT, "TotalMemoryKiB", (int)Applications_GetTotalMemoryUsageInKB()))
+            DX_JSON_INT, "msgId", msgId++,
+            DX_JSON_INT, "temperature", telemetry.latest.temperature,
+            DX_JSON_INT, "pressure", telemetry.latest.pressure,
+            DX_JSON_INT, "humidity", telemetry.latest.humidity,
+            DX_JSON_INT, "peakUserMemoryKiB", (int)Applications_GetPeakUserModeMemoryUsageInKB(),
+            DX_JSON_INT, "totalMemoryKiB", (int)Applications_GetTotalMemoryUsageInKB()))
         // clang-format on
         {
             dx_Log_Debug("%s\n", msgBuffer);

@@ -100,7 +100,7 @@ static DX_DEVICE_TWIN_BINDING dt_hvac_operating_mode = {.propertyName = "HvacOpe
 static DX_DEVICE_TWIN_BINDING dt_hvac_panel_message = {
     .propertyName = "HvacPanelMessage", .twinType = DX_DEVICE_TWIN_STRING, .handler = dt_set_panel_message_handler};
 static DX_DEVICE_TWIN_BINDING dt_hvac_pressure = {.propertyName = "HvacPressure", .twinType = DX_DEVICE_TWIN_INT};
-static DX_DEVICE_TWIN_BINDING dt_hvac_start_utc = {.propertyName = "HvacStartUtc", .twinType = DX_DEVICE_TWIN_STRING};
+static DX_DEVICE_TWIN_BINDING dt_hvac_start_utc = {.propertyName = "HvacStartupUtc", .twinType = DX_DEVICE_TWIN_STRING};
 static DX_DEVICE_TWIN_BINDING dt_hvac_sw_version = {.propertyName = "HvacSoftwareVersion", .twinType = DX_DEVICE_TWIN_STRING};
 static DX_DEVICE_TWIN_BINDING dt_hvac_target_temperature = {
     .propertyName = "HvacTargetTemperature", .twinType = DX_DEVICE_TWIN_INT, .handler = dt_set_target_temperature_handler};

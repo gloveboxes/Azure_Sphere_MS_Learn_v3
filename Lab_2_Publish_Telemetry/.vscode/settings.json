@@ -11,5 +11,11 @@
     "files.associations": {
         "dx_avnet_iot_connect.h": "c",
         "dx_json_serializer.h": "c"
+    },
+    "markdownlint.config": {
+        "MD028": false,
+        "MD025": {
+            "front_matter_title": ""
+        }
     }
 }

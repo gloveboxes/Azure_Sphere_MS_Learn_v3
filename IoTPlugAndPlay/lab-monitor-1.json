@@ -12,7 +12,7 @@
       "displayName": {
         "en": "Temperature"
       },
-      "name": "Temperature",
+      "name": "temperature",
       "schema": "integer",
       "unit": "degreeCelsius"
     },
@@ -23,7 +23,7 @@
       "displayName": {
         "en": "Message ID"
       },
-      "name": "MsgId",
+      "name": "msgId",
       "schema": "integer"
     },
     {
@@ -34,7 +34,7 @@
       "displayName": {
         "en": "Pressure"
       },
-      "name": "Pressure",
+      "name": "pressure",
       "schema": "integer",
       "unit": "millibar"
     },
@@ -46,7 +46,7 @@
       "displayName": {
         "en": "Humidity"
       },
-      "name": "Humidity",
+      "name": "humidity",
       "schema": "integer",
       "unit": "percent"
     },
@@ -58,7 +58,7 @@
       "displayName": {
         "en": "Peak user memory KiB"
       },
-      "name": "PeakUserMemoryKiB",
+      "name": "peakUserMemoryKiB",
       "schema": "integer",
       "unit": "kibibyte"
     },
@@ -70,7 +70,7 @@
       "displayName": {
         "en": "Total memory KiB"
       },
-      "name": "TotalMemoryKiB",
+      "name": "totalMemoryKiB",
       "schema": "integer",
       "unit": "kibibyte"
     },
@@ -131,7 +131,7 @@
       "displayName": {
         "en": "HVAC Start time"
       },
-      "name": "HvacStartUtc",
+      "name": "HvacStartupUtc",
       "schema": "dateTime",
       "writable": false
     },
@@ -159,6 +159,14 @@
       "name": "HvacPanelMessage",
       "schema": "string",
       "writable": true
+    },
+    {
+      "@type": "Property",
+      "displayName": {
+        "en": "Deferred update status"
+      },
+      "name": "DeferredUpdateRequest",
+      "schema": "string"
     },
     {
       "@type": "Command",

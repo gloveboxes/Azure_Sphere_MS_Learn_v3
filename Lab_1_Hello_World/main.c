@@ -139,6 +139,7 @@ static void InitPeripheralsAndHandlers(void)
     hvac_sensors_init();
     dx_Log_Debug_Init(Log_Debug_Time_buffer, sizeof(Log_Debug_Time_buffer));
     dx_gpioSetOpen(gpio_bindings, NELEMS(gpio_bindings));
+    dx_i2cSetOpen(i2c_bindings, NELEMS(i2c_bindings));
     dx_timerSetStart(timer_bindings, NELEMS(timer_bindings));
     dx_azureRegisterConnectionChangedNotification(azure_connection_state);
 }
@@ -150,6 +151,7 @@ static void ClosePeripheralsAndHandlers(void)
 {
     dx_timerSetStop(timer_bindings, NELEMS(timer_bindings));
     dx_gpioSetClose(gpio_bindings, NELEMS(gpio_bindings));
+    dx_i2cSetClose(i2c_bindings, NELEMS(i2c_bindings));
     dx_timerEventLoopStop();
 }
 

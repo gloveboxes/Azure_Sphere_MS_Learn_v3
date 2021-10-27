@@ -6,12 +6,15 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
+#include "dx_i2c.h"
 
 #include "hw/azure_sphere_learning_path.h"
 
 #ifdef OEM_AVNET
 #include "AzureSphereDrivers/AVNET/HL/imu_temp_pressure.h"
 #endif
+
+extern DX_I2C_BINDING i2c_onboard_sensors;
 
 typedef struct {
     int temperature;

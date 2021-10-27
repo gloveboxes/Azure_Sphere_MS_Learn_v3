@@ -229,6 +229,7 @@ static void InitPeripheralsAndHandlers(void)
     dx_azureConnect(&dx_config, NETWORK_INTERFACE, IOT_PLUG_AND_PLAY_MODEL_ID);
     dx_gpioSetOpen(gpio_bindings, NELEMS(gpio_bindings));
     dx_gpioSetOpen(gpio_ledRgb, NELEMS(gpio_ledRgb));
+    dx_i2cSetOpen(i2c_bindings, NELEMS(i2c_bindings));
     dx_timerSetStart(timer_bindings, NELEMS(timer_bindings));
     dx_deviceTwinSubscribe(device_twin_bindings, NELEMS(device_twin_bindings));
     dx_directMethodSubscribe(direct_method_bindings, NELEMS(direct_method_bindings));
@@ -250,6 +251,7 @@ static void ClosePeripheralsAndHandlers(void)
     dx_directMethodUnsubscribe();
     dx_gpioSetClose(gpio_bindings, NELEMS(gpio_bindings));
     dx_gpioSetClose(gpio_ledRgb, NELEMS(gpio_ledRgb));
+    dx_i2cSetClose(i2c_bindings, NELEMS(i2c_bindings));
     dx_timerEventLoopStop();
 }
 

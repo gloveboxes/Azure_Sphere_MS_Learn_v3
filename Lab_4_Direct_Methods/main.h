@@ -7,6 +7,7 @@
 #include "dx_config.h"
 #include "dx_deferred_update.h"
 #include "dx_gpio.h"
+#include "dx_i2c.h"
 #include "dx_intercore.h"
 #include "dx_json_serializer.h"
 #include "dx_terminate.h"
@@ -69,6 +70,9 @@ static DX_DEVICE_TWIN_BINDING dt_hvac_start_utc = {.propertyName = "HvacStartupU
 static DX_GPIO_BINDING gpio_operating_led = {.pin = LED2, .name = "hvac_operating_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
 DX_GPIO_BINDING gpio_network_led = {.pin = NETWORK_CONNECTED_LED, .name = "network_led", .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true};
 
+// declare i2c bindings
+DX_I2C_BINDING i2c_onboard_sensors = {.interfaceId = I2cMaster2, .speedInHz = I2C_BUS_SPEED_STANDARD, .name = "i2c co2 sensor"};
+
 // Create an RGB LED gpio binding set
 static DX_GPIO_BINDING *gpio_ledRgb[] = {
     &(DX_GPIO_BINDING){.pin = LED_RED, .direction = DX_OUTPUT, .initialState = GPIO_Value_Low, .invertPin = true, .name = "red led"},
@@ -94,3 +98,4 @@ DX_DIRECT_METHOD_BINDING *direct_method_bindings[] = {&dm_hvac_restart, &dm_hvac
 DX_GPIO_BINDING *gpio_bindings[] = {&gpio_network_led, &gpio_operating_led};
 DX_TIMER_BINDING *timer_bindings[] = {&tmr_publish_telemetry, &tmr_read_telemetry, &tmr_hvac_restart_oneshot_timer, &tmr_azure_status_led_off,
                                       &tmr_azure_status_led_on};
+DX_I2C_BINDING *i2c_bindings[] = {&i2c_onboard_sensors};

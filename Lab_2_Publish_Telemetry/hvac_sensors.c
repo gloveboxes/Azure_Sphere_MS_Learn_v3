@@ -7,10 +7,10 @@
 
 bool hvac_sensors_init(void) {
     srand((unsigned int)time(NULL)); // seed the random number generator for fake telemetry
-    avnet_imu_initialize(I2cMaster2, I2C_BUS_SPEED_FAST_PLUS);
+    avnet_imu_initialize(i2c_onboard_sensors.fd);
 
     // lp_calibrate_angular_rate(); // call if using gyro
-    // lp_OpenADC();
+    // avnet_open_adc(ADC_CHANNEL);
 
     return true;
 }
@@ -32,6 +32,7 @@ bool hvac_sensors_read(SENSOR *telemetry)
     telemetry->temperature = (int)avnet_get_temperature();
     telemetry->pressure = (int)avnet_get_pressure();
     telemetry->humidity = 20 + (rand() % 60);
+    // telemetry->light = avnet_get_light_level();
 
     return true;
 }
@@ -49,7 +50,7 @@ bool hvac_sensors_init(void) {
 }
 
 /// <summary>
-///     Generate fake telemetry for Seeed Studi dev boards
+///     Generate fake telemetry for Seeed Studio dev boards
 /// </summary>
 bool hvac_sensors_read(SENSOR *telemetry)
 {

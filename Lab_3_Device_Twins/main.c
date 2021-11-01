@@ -39,6 +39,7 @@
  *
  * Read HVAC environment sensor
  * Publish HVAC environment data
+ * Update environment device twins
  * Update HVAC Operating mode and current environment data
  **********************************************************************************************************/
 
@@ -168,7 +169,7 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
     telemetry.updated = true;
 
     // clang-format off
-    telemetry.valid = 
+    telemetry.valid =
         IN_RANGE(telemetry.latest.temperature, -20, 50) &&
         IN_RANGE(telemetry.latest.pressure, 800, 1200) &&
         IN_RANGE(telemetry.latest.humidity, 0, 100);
@@ -182,7 +183,6 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
  * REMOTE OPERATIONS: DEVICE TWINS
  *
  * Set target HVAC temperature
- * Set HVAC panel message
  **********************************************************************************************************/
 
 /// <summary>

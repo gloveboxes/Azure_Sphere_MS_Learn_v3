@@ -98,7 +98,7 @@ static void read_telemetry_handler(EventLoopTimer *eventLoopTimer)
     telemetry.updated = true;
 
     // clang-format off
-    telemetry.valid = 
+    telemetry.valid =
         IN_RANGE(telemetry.latest.temperature, -20, 50) &&
         IN_RANGE(telemetry.latest.pressure, 800, 1200) &&
         IN_RANGE(telemetry.latest.humidity, 0, 100);
@@ -148,44 +148,15 @@ static void hvac_delay_restart_handler(EventLoopTimer *eventLoopTimer)
 }
 
 /// <summary>
-/// Start Device Power Restart Direct Method 'ResetMethod' integer seconds eg 5
+/// Direct method 'HvacRestart' sets oneshot timer to restart the device.
+/// The delayed restart is to allow for the direct method to return success status to IoT Hub
+/// For an example of a direct method with a JSON payload refer to
+/// https://github.com/Azure-Sphere-DevX/AzureSphereDevX.Examples/wiki/IoT-Hub-Direct-Methods#remote-restarting-the-azure-sphere
 /// </summary>
 static DX_DIRECT_METHOD_RESPONSE_CODE hvac_restart_handler(JSON_Value *json, DX_DIRECT_METHOD_BINDING *directMethodBinding, char **responseMsg)
 {
-    // Allocate and initialize a response message buffer. The
-    // calling function is responsible for the freeing memory
-    const size_t responseLen = 100;
-    static struct timespec period;
-
-    *responseMsg = (char *)malloc(responseLen);
-    memset(*responseMsg, 0, responseLen);
-
-    if (json_value_get_type(json) != JSONNumber)
-    {
-        return DX_METHOD_FAILED;
-    }
-
-    int seconds = (int)json_value_get_number(json);
-
-    // leave enough time for the device twin dt_reportedRestartUtc
-    // to update before restarting the device
-    if (IN_RANGE(seconds, 3, 10))
-    {
-        // Create Direct Method Response
-        snprintf(*responseMsg, responseLen, "%s called. Restart in %d seconds", directMethodBinding->methodName, seconds);
-
-        // Set One Shot DX_TIMER_BINDING
-        period = (struct timespec){.tv_sec = seconds, .tv_nsec = 0};
-        dx_timerOneShotSet(&tmr_hvac_restart_oneshot_timer, &period);
-
-        return DX_METHOD_SUCCEEDED;
-    }
-    else
-    {
-        snprintf(*responseMsg, responseLen, "%s called. Restart Failed. Seconds out of range: %d", directMethodBinding->methodName, seconds);
-
-        return DX_METHOD_FAILED;
-    }
+    dx_timerOneShotSet(&tmr_hvac_restart_oneshot_timer, &(struct timespec){2, 0});
+    return DX_METHOD_SUCCEEDED;
 }
 
 /// <summary>
